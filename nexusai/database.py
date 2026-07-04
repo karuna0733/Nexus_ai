@@ -16,6 +16,7 @@ def _conn():
 def init_db():
     c = _conn()
     try:
+        c.execute("PRAGMA journal_mode=WAL;")
         c.executescript("""
         CREATE TABLE IF NOT EXISTS users (
             id            INTEGER PRIMARY KEY AUTOINCREMENT,

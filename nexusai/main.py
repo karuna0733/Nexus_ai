@@ -1054,10 +1054,12 @@ async function send(){{
       method:'POST',headers:{{'Content-Type':'application/json'}},
       body:JSON.stringify({{message:msg,sid,file:fp}})
     }});
-    if(res.status===429){{
-      const d=await res.json();
-      sc.innerHTML=`<span style="color:var(--gold)">⚠️ ${{esc(d.error)}}</span>`;
-      showToast(d.error); busy=false; $('sbtn').disabled=false; return;
+    if(!res.ok){{
+      const d=await res.json().catch(()=>({{}}));
+      const errText=d.error||`Server error: ${res.status}`;
+      sc.innerHTML=`<span style="color:var(--danger)">⚠️ ${esc(errText)}</span>`;
+      const sr=$('srow'); if(sr) sr.id=''; sc.id='';
+      busy=false; $('sbtn').disabled=false; return;
     }}
     const reader=res.body.getReader(), dec=new TextDecoder();
     while(true){{
@@ -1073,6 +1075,14 @@ async function send(){{
           if(d.error){{sc.innerHTML=`<span style="color:var(--danger)">⚠️ ${{esc(d.error)}}<br><small>Make sure <b>ollama serve</b> is running in a terminal.</small></span>`;}}
         }}catch(_){{}}
       }}
+    }}
+    if(sc.id==='sc'){{
+      if(full){{
+        sc.innerHTML=fmt(full,false);
+      }}else{{
+        sc.innerHTML=`<span style="color:var(--danger)">⚠️ Connection closed with no response.</span>`;
+      }}
+      const sr=$('srow'); if(sr) sr.id=''; sc.id='';
     }}
   }}catch(err){{
     sc.innerHTML=`<span style="color:var(--danger)">⚠️ Could not reach the server.<br><small>Check <b>python main.py</b> is running.</small></span>`;
@@ -1244,46 +1254,47 @@ async def chat_api(request: Request):
     is_gemini = GEMINI_API_KEY is not None
 
     if is_gemini:
-        # Build contents array in Gemini format
+        # Build contents array in Gemini format, merging consecutive user/model messages
         gemini_contents = []
-        
-        # Helper to convert inline images
-        last_user_idx = -1
-        for idx, m in enumerate(reversed(history)):
-            if m["role"] == "user":
-                last_user_idx = len(history) - 1 - idx
-                break
-                
         for idx, m in enumerate(history):
             role = "user" if m["role"] == "user" else "model"
-            parts = []
+            text_content = m["content"] if idx != len(history) - 1 or m["role"] != "user" else prompt
             
-            # If it is the last user message and has an image
-            if idx == last_user_idx and ftype_db == "image" and fi:
-                img_path = UPLOAD_DIR / fi.get("saved_as")
-                if img_path.exists():
-                    try:
-                        with open(img_path, "rb") as img_f:
-                            b64_img = base64.b64encode(img_f.read()).decode("utf-8")
-                        ext = img_path.suffix.lower()
-                        mime_type = "image/jpeg"
-                        if ext == ".png": mime_type = "image/png"
-                        elif ext == ".gif": mime_type = "image/gif"
-                        elif ext == ".webp": mime_type = "image/webp"
-                        
-                        parts.append({
-                            "inlineData": {
-                                "mimeType": mime_type,
-                                "data": b64_img
-                            }
-                        })
-                    except:
-                        pass
-                        
-            # Text part
-            parts.append({"text": m["content"] if idx != last_user_idx else prompt})
-            gemini_contents.append({"role": role, "parts": parts})
-            
+            if gemini_contents and gemini_contents[-1]["role"] == role:
+                for part in gemini_contents[-1]["parts"]:
+                    if "text" in part:
+                        part["text"] += "\n\n" + text_content
+                        break
+                else:
+                    gemini_contents[-1]["parts"].append({"text": text_content})
+            else:
+                gemini_contents.append({"role": role, "parts": [{"text": text_content}]})
+                
+        # Attach image inlineData to the last user message if applicable
+        if ftype_db == "image" and fi:
+            img_path = UPLOAD_DIR / fi.get("saved_as")
+            if img_path.exists():
+                try:
+                    with open(img_path, "rb") as img_f:
+                        b64_img = base64.b64encode(img_f.read()).decode("utf-8")
+                    ext = img_path.suffix.lower()
+                    mime_type = "image/jpeg"
+                    if ext == ".png": mime_type = "image/png"
+                    elif ext == ".gif": mime_type = "image/gif"
+                    elif ext == ".webp": mime_type = "image/webp"
+                    
+                    for item in reversed(gemini_contents):
+                        if item["role"] == "user":
+                            item["parts"].insert(0, {
+                                "inlineData": {
+                                    "mimeType": mime_type,
+                                    "data": b64_img
+                                }
+                            })
+                            break
+                except:
+                    pass
+                    
         gemini_payload = {
             "contents": gemini_contents,
             "systemInstruction": {
