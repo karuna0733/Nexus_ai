@@ -2,10 +2,10 @@
 database.py — NexusAI SQLite layer
 Tables: users, sessions, conversations, messages, daily_usage
 """
-import sqlite3, hashlib, secrets
+import os, sqlite3, hashlib, secrets
 from datetime import datetime, date, timedelta
 
-DB = "nexus.db"
+DB = "/tmp/nexus.db" if os.getenv("VERCEL") else "nexus.db"
 PLAN_LIMITS = {"free": 50, "pro": 500, "enterprise": 999999}
 
 

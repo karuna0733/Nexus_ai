@@ -4,13 +4,16 @@ Single-file FastAPI app. HTML is embedded directly → no templates folder → n
 Run: python main.py
 """
 
-import os, uuid, json, base64
+import os, sys, uuid, json, base64
 import httpx, aiofiles
 from pathlib import Path
 from dotenv import load_dotenv
 from fastapi import FastAPI, Request, UploadFile, File
 from fastapi.responses import StreamingResponse, HTMLResponse, RedirectResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
+
+# Resolve database module imports relative to the app folder on Vercel
+sys.path.append(str(Path(__file__).parent))
 import database
 
 load_dotenv()
@@ -22,8 +25,8 @@ GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 GEMINI_MODEL   = os.getenv("GEMINI_MODEL",   "gemini-2.5-flash")
 
 
-UPLOAD_DIR = Path("uploads")
-UPLOAD_DIR.mkdir(exist_ok=True)
+UPLOAD_DIR = Path("/tmp/uploads") if os.getenv("VERCEL") else Path("uploads")
+UPLOAD_DIR.mkdir(exist_ok=True, parents=True)
 
 TEXT_EXT = {".txt",".py",".js",".ts",".html",".css",".md",".json",".csv",".xml",".sh",".c",".cpp",".java",".go",".rs"}
 IMG_EXT  = {".jpg",".jpeg",".png",".gif",".webp",".bmp"}
@@ -36,7 +39,7 @@ SYSTEM_PROMPT = (
 )
 
 app = FastAPI(title="NexusAI")
-app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
+app.mount("/uploads", StaticFiles(directory=str(UPLOAD_DIR)), name="uploads")
 database.init_db()
 
 
