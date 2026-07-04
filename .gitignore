@@ -1,0 +1,30 @@
+# Local environments and dependency directories
+venv/
+nexusai/venv/
+
+# Caches and builds
+__pycache__/
+nexusai/__pycache__/
+*.pyc
+
+# Private configurations and databases
+.env
+nexusai/.env
+nexus.db
+nexusai/nexus.db
+
+# User uploads and runtime files
+uploads/
+nexusai/uploads/
+*.log
+.system_generated/
+tasks/
+browser/
+scratch/
+test_chat_api.py
+verify_gemini_key.py
+list_gemini_models.py
+test_gemini_stream.py
+inspect_db.py
+inspect_files.py
+query_ollama.py

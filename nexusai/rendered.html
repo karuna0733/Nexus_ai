@@ -1,0 +1,766 @@
+1: <!DOCTYPE html>
+2: <html lang="en">
+3: <head>
+4: <meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+5: <title>NexusAI</title>
+6: <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+7: <style>
+8: *{margin:0;padding:0;box-sizing:border-box;}
+9: :root{
+10:   --bg:#060610;--sb:#04040d;--card:#0c0c1e;--msg-ai:#0d0d20;
+11:   --p:#8b5cf6;--c:#06b6d4;--pp:#7c3aed;
+12:   --text:#e2e8f0;--dim:#4b5563;--border:#1a1a35;
+13:   --danger:#f43f5e;--gold:#f59e0b;
+14:   --code:#070712;
+15: }
+16: html,body{height:100%;overflow:hidden;}
+17: body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--text);display:flex;position:relative;}
+18: ::-webkit-scrollbar{width:4px;} ::-webkit-scrollbar-thumb{background:#1e1e40;border-radius:4px;}
+19: 
+20: /* canvas bg */
+21: #bg{position:fixed;inset:0;z-index:0;pointer-events:none;}
+22: 
+23: /* ── SIDEBAR ── */
+24: #sb{
+25:   width:272px;background:var(--sb);display:flex;flex-direction:column;
+26:   border-right:1px solid var(--border);flex-shrink:0;z-index:10;
+27:   position:relative;
+28: }
+29: /* subtle purple left glow on sidebar */
+30: #sb::after{content:'';position:absolute;left:0;top:20%;bottom:20%;width:1px;background:linear-gradient(to bottom,transparent,var(--p),transparent);}
+31: 
+32: .sb-top{padding:16px 14px 12px;border-bottom:1px solid var(--border);}
+33: .nx-logo{display:flex;align-items:center;gap:12px;}
+34: .nx-logo svg{flex-shrink:0;}
+35: .nx-name{font-size:17px;font-weight:900;letter-spacing:-.4px;}
+36: .nx-name em{font-style:normal;background:linear-gradient(135deg,var(--p),var(--c));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+37: .nx-sub{font-size:11px;color:var(--dim);margin-top:1px;}
+38: 
+39: #new-btn{
+40:   display:flex;align-items:center;justify-content:center;gap:8px;
+41:   width:100%;margin-top:12px;padding:10px 14px;
+42:   background:linear-gradient(135deg,var(--p),var(--pp));
+43:   color:#fff;border:none;border-radius:10px;font-size:13.5px;font-weight:700;cursor:pointer;
+44:   box-shadow:0 4px 18px rgba(139,92,246,.3);transition:all .2s;
+45: }
+46: #new-btn:hover{transform:translateY(-1px);box-shadow:0 6px 24px rgba(139,92,246,.4);}
+47: 
+48: .sb-search{padding:10px 12px 6px;}
+49: .sb-search input{
+50:   width:100%;padding:8px 12px 8px 34px;
+51:   background:var(--card);border:1px solid var(--border);
+52:   border-radius:9px;color:var(--text);font-size:13px;outline:none;
+53:   background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' fill='%234b5563' viewBox='0 0 16 16'%3E%3Cpath d='M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.099zm-5.242 1.856a5.5 5.5 0 1 1 0-11 5.5 5.5 0 0 1 0 11z'/%3E%3C/svg%3E");
+54:   background-repeat:no-repeat;background-position:10px center;
+55:   transition:border-color .2s;
+56: }
+57: .sb-search input:focus{border-color:var(--p);}
+58: .sb-search input::placeholder{color:var(--dim);}
+59: 
+60: .sb-lbl{padding:8px 16px 4px;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--dim);}
+61: #convs{flex:1;overflow-y:auto;padding:0 8px 8px;}
+62: 
+63: .cv{
+64:   display:flex;align-items:center;gap:8px;padding:9px 10px;
+65:   border-radius:9px;cursor:pointer;font-size:13px;
+66:   transition:background .15s;margin-bottom:1px;
+67: }
+68: .cv:hover{background:var(--card);}
+69: .cv.act{background:var(--card);border-left:2px solid var(--p);padding-left:8px;}
+70: .cv-ico{font-size:15px;flex-shrink:0;opacity:.7;}
+71: .cv-ttl{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+72: .cv-del{opacity:0;background:none;border:none;color:var(--danger);cursor:pointer;padding:3px 6px;border-radius:4px;font-size:13px;}
+73: .cv:hover .cv-del{opacity:1;}
+74: 
+75: /* Usage */
+76: .usg{padding:10px 16px 6px;}
+77: .usg-row{display:flex;justify-content:space-between;font-size:11px;color:var(--dim);margin-bottom:5px;}
+78: .usg-bar{height:3px;background:rgba(255,255,255,.05);border-radius:2px;}
+79: .usg-fill{height:100%;border-radius:2px;transition:width .5s,background .5s;background:linear-gradient(90deg,var(--p),var(--c));}
+80: 
+81: /* Profile */
+82: .prof{
+83:   padding:12px 14px;border-top:1px solid var(--border);
+84:   display:flex;align-items:center;gap:10px;
+85: }
+86: .av-big{
+87:   width:34px;height:34px;border-radius:50%;flex-shrink:0;
+88:   display:flex;align-items:center;justify-content:center;
+89:   font-size:14px;font-weight:800;color:#fff;
+90:   background:linear-gradient(135deg,var(--p),var(--c));
+91: }
+92: .prof-info{flex:1;min-width:0;}
+93: .prof-name{font-size:13px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+94: .badge{
+95:   display:inline-block;font-size:10px;font-weight:700;
+96:   padding:2px 8px;border-radius:20px;margin-top:2px;text-transform:uppercase;
+97: }
+98: .b-free{background:rgba(75,85,99,.2);color:var(--dim);}
+99: .b-pro {background:rgba(139,92,246,.2);color:var(--p);}
+100: .b-enterprise{background:rgba(245,158,11,.2);color:var(--gold);}
+101: .pi-btn{background:none;border:none;color:var(--dim);cursor:pointer;padding:7px;border-radius:8px;font-size:17px;transition:color .15s,background .15s;}
+102: .pi-btn:hover{color:var(--text);background:var(--card);}
+103: 
+104: /* ── MAIN ── */
+105: #main{flex:1;display:flex;flex-direction:column;overflow:hidden;z-index:10;position:relative;min-width:0;}
+106: 
+107: /* Header */
+108: #hdr{
+109:   padding:13px 24px;border-bottom:1px solid var(--border);
+110:   display:flex;align-items:center;gap:12px;flex-shrink:0;
+111:   background:rgba(6,6,16,.85);backdrop-filter:blur(16px);
+112: }
+113: .hdr-icon{
+114:   width:40px;height:40px;border-radius:12px;flex-shrink:0;
+115:   display:flex;align-items:center;justify-content:center;
+116:   background:linear-gradient(135deg,rgba(139,92,246,.3),rgba(6,182,212,.2));
+117:   border:1px solid rgba(139,92,246,.25);
+118: }
+119: .hdr-title{font-size:15px;font-weight:800;}
+120: .hdr-sub{font-size:11.5px;color:var(--dim);margin-top:2px;}
+121: .online-pill{
+122:   margin-left:auto;display:flex;align-items:center;gap:6px;
+123:   font-size:11px;color:var(--dim);background:var(--card);
+124:   padding:4px 12px;border-radius:20px;border:1px solid var(--border);
+125: }
+126: .odot{width:7px;height:7px;background:#22c55e;border-radius:50%;animation:blink 2s infinite;}
+127: @keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+128: 
+129: /* Messages */
+130: #msgs{flex:1;overflow-y:auto;padding:28px 6% 20px;display:flex;flex-direction:column;gap:22px;}
+131: 
+132: /* Welcome */
+133: #welcome{display:flex;flex-direction:column;align-items:center;justify-content:center;flex:1;gap:18px;text-align:center;padding:40px;}
+134: .wlc-logo{
+135:   width:82px;height:82px;border-radius:24px;
+136:   display:flex;align-items:center;justify-content:center;
+137:   background:linear-gradient(135deg,rgba(139,92,246,.2),rgba(6,182,212,.1));
+138:   border:1px solid rgba(139,92,246,.3);
+139:   animation:float 4s ease-in-out infinite;
+140:   box-shadow:0 0 60px rgba(139,92,246,.2);
+141: }
+142: @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-12px)}}
+143: #welcome h2{font-size:26px;font-weight:900;}
+144: #welcome h2 span{background:linear-gradient(135deg,var(--p),var(--c));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+145: #welcome p{color:var(--dim);font-size:14.5px;max-width:420px;line-height:1.65;}
+146: .chips{display:flex;flex-wrap:wrap;justify-content:center;gap:8px;margin-top:6px;max-width:540px;}
+147: .chip{
+148:   background:var(--card);border:1px solid var(--border);
+149:   border-radius:22px;padding:8px 16px;font-size:13px;
+150:   cursor:pointer;color:var(--text);transition:all .2s;
+151: }
+152: .chip:hover{border-color:var(--p);color:var(--p);transform:translateY(-2px);box-shadow:0 4px 16px rgba(139,92,246,.15);}
+153: 
+154: /* Bubbles */
+155: .mrow{display:flex;gap:12px;align-items:flex-start;animation:up .2s ease;}
+156: @keyframes up{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+157: .mrow.user{flex-direction:row-reverse;}
+158: .av{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;flex-shrink:0;}
+159: .av.ai  {background:linear-gradient(135deg,rgba(139,92,246,.3),rgba(6,182,212,.2));border:1px solid rgba(139,92,246,.3);}
+160: .av.user{background:linear-gradient(135deg,var(--p),var(--pp));color:#fff;}
+161: .bbl{max-width:72%;padding:13px 17px;border-radius:18px;font-size:14px;line-height:1.75;}
+162: .mrow.ai   .bbl{background:var(--msg-ai);border-top-left-radius:4px;border-left:2px solid rgba(139,92,246,.3);}
+163: .mrow.user .bbl{background:linear-gradient(135deg,var(--p),var(--pp));color:#fff;border-top-right-radius:4px;}
+164: .mts{font-size:10.5px;color:var(--dim);margin-top:4px;padding:0 4px;}
+165: .mrow.user .mts{text-align:right;}
+166: .cursor{display:inline-block;width:2px;height:15px;background:var(--p);animation:blink .6s infinite;vertical-align:text-bottom;margin-left:2px;border-radius:1px;}
+167: .bbl pre{background:var(--code);border:1px solid var(--border);border-radius:9px;padding:14px 16px;overflow-x:auto;font-size:13px;margin:10px 0;position:relative;}
+168: .bbl code{font-family:'Cascadia Code','Consolas','Monaco',monospace;}
+169: .cp-btn{position:absolute;top:8px;right:8px;background:var(--card);border:1px solid var(--border);color:var(--dim);border-radius:5px;padding:3px 10px;font-size:11px;cursor:pointer;}
+170: .cp-btn:hover{color:var(--text);}
+171: .ic{background:var(--code);padding:2px 6px;border-radius:4px;font-family:'Cascadia Code','Consolas',monospace;font-size:13px;border:1px solid var(--border);}
+172: .chat-img{max-width:100%;max-height:280px;border-radius:10px;display:block;margin-bottom:8px;}
+173: .fatag{display:flex;align-items:center;gap:8px;background:rgba(139,92,246,.08);border:1px solid rgba(139,92,246,.2);border-radius:8px;padding:7px 11px;margin-bottom:8px;font-size:12.5px;color:var(--dim);}
+174: 
+175: .bbl p{margin-bottom:8px;line-height:1.6;}
+176: .bbl p:last-child{margin-bottom:0;}
+177: .bbl h1, .bbl h2, .bbl h3, .bbl h4{color:#fff;margin-top:14px;margin-bottom:8px;font-weight:700;line-height:1.3;}
+178: .bbl h1{font-size:1.45em;}
+179: .bbl h2{font-size:1.3em;}
+180: .bbl h3{font-size:1.15em;}
+181: .bbl ul, .bbl ol{margin-left:22px;margin-bottom:8px;}
+182: .bbl li{margin-bottom:4px;}
+183: .bbl blockquote{border-left:3px solid var(--p);padding-left:12px;color:var(--dim);margin:10px 0;font-style:italic;}
+184: .bbl table{border-collapse:collapse;width:100%;margin:14px 0;font-size:13.5px;}
+185: .bbl th, .bbl td{border:1px solid var(--border);padding:8px 10px;text-align:left;}
+186: .bbl th{background:rgba(255,255,255,0.04);font-weight:700;color:#fff;}
+187: 
+188: /* ── INPUT AREA ── */
+189: #inp-area{padding:14px 6% 18px;border-top:1px solid var(--border);flex-shrink:0;background:rgba(6,6,16,.9);backdrop-filter:blur(16px);}
+190: 
+191: #file-prev{display:none;align-items:center;gap:10px;background:var(--card);border:1px solid rgba(139,92,246,.2);border-radius:10px;padding:8px 14px;margin-bottom:10px;}
+192: #file-prev.show{display:flex;}
+193: #fp-img{max-height:56px;border-radius:6px;display:none;}
+194: 
+195: #voice-ind{display:none;align-items:center;gap:10px;background:rgba(244,63,94,.08);border:1px solid rgba(244,63,94,.2);border-radius:10px;padding:8px 14px;margin-bottom:10px;font-size:13px;color:var(--danger);}
+196: #voice-ind.show{display:flex;}
+197: .vdot{width:10px;height:10px;background:var(--danger);border-radius:50%;animation:pvdot 1s ease-in-out infinite;}
+198: @keyframes pvdot{0%,100%{transform:scale(1)}50%{transform:scale(1.5);opacity:.5}}
+199: 
+200: .irow{
+201:   display:flex;align-items:flex-end;gap:8px;
+202:   background:var(--card);border:1.5px solid var(--border);
+203:   border-radius:16px;padding:10px 12px;
+204:   transition:border-color .2s,box-shadow .2s;
+205: }
+206: .irow:focus-within{border-color:var(--p);box-shadow:0 0 0 3px rgba(139,92,246,.1);}
+207: #ui{
+208:   flex:1;background:none;border:none;color:var(--text);
+209:   font-size:14px;resize:none;max-height:160px;outline:none;
+210:   font-family:inherit;line-height:1.6;padding:2px 0;
+211: }
+212: #ui::placeholder{color:#374151;}
+213: .tbtn{
+214:   background:none;border:none;color:var(--dim);cursor:pointer;
+215:   padding:7px;border-radius:9px;font-size:18px;
+216:   transition:all .2s;flex-shrink:0;display:flex;align-items:center;justify-content:center;
+217: }
+218: .tbtn:hover{color:var(--p);background:rgba(139,92,246,.1);}
+219: .tbtn.rec{color:var(--danger);}
+220: #sbtn{
+221:   background:linear-gradient(135deg,var(--p),var(--pp));
+222:   border:none;border-radius:11px;color:#fff;
+223:   width:38px;height:38px;cursor:pointer;
+224:   display:flex;align-items:center;justify-content:center;font-size:16px;
+225:   transition:all .2s;flex-shrink:0;box-shadow:0 2px 14px rgba(139,92,246,.35);
+226: }
+227: #sbtn:hover{transform:scale(1.08);}
+228: #sbtn:disabled{background:#1a1a35;cursor:not-allowed;transform:none;box-shadow:none;}
+229: .ihint{text-align:center;font-size:11px;color:var(--dim);margin-top:7px;}
+230: #fi,#ii{display:none;}
+231: 
+232: /* ── SUBSCRIBE MODAL ── */
+233: #moverlay{
+234:   display:none;position:fixed;inset:0;z-index:100;
+235:   background:rgba(0,0,0,.75);backdrop-filter:blur(8px);
+236:   align-items:center;justify-content:center;
+237: }
+238: #moverlay.show{display:flex;}
+239: .modal{
+240:   background:#09091a;border:1px solid var(--border);border-radius:22px;
+241:   padding:34px 32px;width:580px;max-width:95vw;
+242:   box-shadow:0 24px 80px rgba(0,0,0,.7),0 0 0 1px rgba(139,92,246,.1);
+243: }
+244: .modal h2{font-size:22px;font-weight:900;text-align:center;margin-bottom:6px;}
+245: .modal h2 span{background:linear-gradient(135deg,var(--p),var(--c));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+246: .modal p{text-align:center;color:var(--dim);font-size:14px;margin-bottom:28px;}
+247: .plans{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;}
+248: .pc{
+249:   background:var(--card);border:1.5px solid var(--border);border-radius:14px;
+250:   padding:20px 16px;text-align:center;transition:all .2s;cursor:pointer;position:relative;overflow:hidden;
+251: }
+252: .pc:hover{border-color:var(--p);transform:translateY(-2px);box-shadow:0 8px 30px rgba(139,92,246,.15);}
+253: .pc.rec{border-color:var(--p);}
+254: .pc-badge{
+255:   position:absolute;top:0;right:0;
+256:   background:linear-gradient(135deg,var(--p),var(--c));
+257:   color:#fff;font-size:10px;font-weight:800;
+258:   padding:3px 12px;border-radius:0 14px 0 9px;
+259: }
+260: .pc-name{font-size:15px;font-weight:800;margin-bottom:6px;}
+261: .pc-price{font-size:28px;font-weight:900;margin-bottom:4px;}
+262: .pc-price.free{color:var(--dim);} .pc-price.pro{color:var(--p);} .pc-price.ent{color:var(--gold);}
+263: .pc-price sub{font-size:13px;font-weight:400;color:var(--dim);}
+264: .pc ul{list-style:none;text-align:left;font-size:12.5px;color:var(--dim);margin:12px 0 16px;}
+265: .pc ul li{padding:3px 0;} .pc ul li::before{content:'✦ ';color:var(--p);font-size:10px;}
+266: .pc-btn{
+267:   display:block;width:100%;padding:9px;
+268:   border:1.5px solid var(--border);background:none;
+269:   color:var(--text);border-radius:9px;cursor:pointer;
+270:   font-size:13px;font-weight:700;transition:all .2s;
+271: }
+272: .pc-btn:hover,.pc.rec .pc-btn{background:linear-gradient(135deg,var(--p),var(--pp));border-color:transparent;color:#fff;}
+273: .m-close{display:block;margin:22px auto 0;background:none;border:none;color:var(--dim);cursor:pointer;font-size:13px;}
+274: .m-close:hover{color:var(--text);}
+275: 
+276: /* ── TOAST ── */
+277: #toast{
+278:   position:fixed;top:18px;left:50%;transform:translateX(-50%);
+279:   background:#0f0f24;border:1px solid var(--gold);border-radius:12px;
+280:   padding:11px 18px;z-index:200;display:none;align-items:center;gap:10px;font-size:13px;
+281:   box-shadow:0 8px 30px rgba(0,0,0,.4);animation:slideD .3s ease;min-width:280px;
+282: }
+283: #toast.show{display:flex;}
+284: @keyframes slideD{from{opacity:0;transform:translateX(-50%) translateY(-12px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
+285: </style>
+286: </head>
+287: <body>
+288: <canvas id="bg"></canvas>
+289: 
+290: <input type="file" id="fi" accept=".txt,.py,.js,.ts,.html,.css,.md,.json,.csv,.xml,.sh,.c,.cpp,.java"/>
+291: <input type="file" id="ii" accept="image/*"/>
+292: 
+293: <!-- ═══ SIDEBAR ═══════════════════════════════════════════════════════════ -->
+294: <div id="sb">
+295:   <div class="sb-top">
+296:     <div class="nx-logo">
+297:       <!-- NexusAI Hexagon Logo (animated) -->
+298:       <svg width="38" height="38" viewBox="0 0 38 38">
+299:         <defs>
+300:           <linearGradient id="nlg" x1="0%" y1="0%" x2="100%" y2="100%">
+301:             <stop offset="0%" stop-color="#8b5cf6"><animate attributeName="stop-color" values="#8b5cf6;#06b6d4;#8b5cf6" dur="4s" repeatCount="indefinite"/></stop>
+302:             <stop offset="100%" stop-color="#06b6d4"><animate attributeName="stop-color" values="#06b6d4;#8b5cf6;#06b6d4" dur="4s" repeatCount="indefinite"/></stop>
+303:           </linearGradient>
+304:         </defs>
+305:         <polygon points="19,2 34,10.5 34,27.5 19,36 4,27.5 4,10.5" fill="url(#nlg)" opacity=".12"/>
+306:         <polygon points="19,2 34,10.5 34,27.5 19,36 4,27.5 4,10.5" fill="none" stroke="url(#nlg)" stroke-width="1.5"/>
+307:         <circle cx="19" cy="19" r="5.5" fill="url(#nlg)"><animate attributeName="r" values="5.5;6.2;5.5" dur="2.5s" repeatCount="indefinite"/></circle>
+308:         <circle cx="19" cy="4"    r="1.8" fill="url(#nlg)" opacity=".7"/>
+309:         <circle cx="32" cy="11.5" r="1.8" fill="url(#nlg)" opacity=".7"/>
+310:         <circle cx="32" cy="26.5" r="1.8" fill="url(#nlg)" opacity=".7"/>
+311:         <circle cx="19" cy="34"   r="1.8" fill="url(#nlg)" opacity=".7"/>
+312:         <circle cx="6"  cy="26.5" r="1.8" fill="url(#nlg)" opacity=".7"/>
+313:         <circle cx="6"  cy="11.5" r="1.8" fill="url(#nlg)" opacity=".7"/>
+314:         <line x1="19" y1="4"    x2="19" y2="13.5" stroke="url(#nlg)" stroke-width=".7" opacity=".4"/>
+315:         <line x1="32" y1="11.5" x2="23" y2="15"   stroke="url(#nlg)" stroke-width=".7" opacity=".4"/>
+316:         <line x1="32" y1="26.5" x2="23" y2="23"   stroke="url(#nlg)" stroke-width=".7" opacity=".4"/>
+317:         <line x1="19" y1="34"   x2="19" y2="24.5" stroke="url(#nlg)" stroke-width=".7" opacity=".4"/>
+318:         <line x1="6"  y1="26.5" x2="15" y2="23"   stroke="url(#nlg)" stroke-width=".7" opacity=".4"/>
+319:         <line x1="6"  y1="11.5" x2="15" y2="15"   stroke="url(#nlg)" stroke-width=".7" opacity=".4"/>
+320:       </svg>
+321:       <div>
+322:         <div class="nx-name">Nexus<em>AI</em></div>
+323:         <div class="nx-sub">AI Companion</div>
+324:       </div>
+325:     </div>
+326:     <button id="new-btn" onclick="newChat()">✦ &nbsp;New Conversation</button>
+327:   </div>
+328: 
+329:   <div class="sb-search">
+330:     <input type="text" placeholder="Search conversations…" oninput="searchConvs(this.value)"/>
+331:   </div>
+332: 
+333:   <div class="sb-lbl">History</div>
+334:   <div id="convs"></div>
+335: 
+336:   <div class="usg">
+337:     <div class="usg-row">
+338:       <span id="usg-txt">0 / 50 messages today</span>
+339:       <span id="usg-plan" style="color:var(--p);font-weight:700">Free</span>
+340:     </div>
+341:     <div class="usg-bar"><div class="usg-fill" id="usg-fill" style="width:0%"></div></div>
+342:   </div>
+343: 
+344:   <div class="prof">
+345:     <div class="av-big" id="pav">U</div>
+346:     <div class="prof-info">
+347:       <div class="prof-name" id="pname">user123</div>
+348:       <span class="badge b-free" id="pbadge">Free</span>
+349:     </div>
+350:     <button class="pi-btn" onclick="openModal()" title="Upgrade Plan">⚡</button>
+351:     <button class="pi-btn" onclick="logout()" title="Sign Out">⏻</button>
+352:   </div>
+353: </div>
+354: 
+355: <!-- ═══ MAIN ══════════════════════════════════════════════════════════════ -->
+356: <div id="main">
+357:   <div id="hdr">
+358:     <div class="hdr-icon">
+359:       <svg width="22" height="22" viewBox="0 0 22 22">
+360:         <polygon points="11,1 20,6 20,16 11,21 2,16 2,6" fill="none" stroke="#8b5cf6" stroke-width="1.2"/>
+361:         <circle cx="11" cy="11" r="3.5" fill="#8b5cf6" opacity=".9"/>
+362:       </svg>
+363:     </div>
+364:     <div>
+365:       <div class="hdr-title">Nexus</div>
+366:       <div class="hdr-sub">Intelligent AI · Always Private</div>
+367:     </div>
+368:     <div class="online-pill"><div class="odot"></div>Online</div>
+369:   </div>
+370: 
+371:   <div id="msgs">
+372:     <div id="welcome">
+373:       <div class="wlc-logo">
+374:         <svg width="44" height="44" viewBox="0 0 44 44">
+375:           <defs><linearGradient id="wg" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#8b5cf6"/><stop offset="100%" stop-color="#06b6d4"/></linearGradient></defs>
+376:           <polygon points="22,2 40,12 40,32 22,42 4,32 4,12" fill="none" stroke="url(#wg)" stroke-width="1.5"/>
+377:           <circle cx="22" cy="22" r="8" fill="url(#wg)" opacity=".2"/>
+378:           <circle cx="22" cy="22" r="5" fill="url(#wg)"/>
+379:           <line x1="22" y1="2"  x2="22" y2="17" stroke="url(#wg)" stroke-width="1" opacity=".4"/>
+380:           <line x1="40" y1="12" x2="27" y2="17" stroke="url(#wg)" stroke-width="1" opacity=".4"/>
+381:           <line x1="40" y1="32" x2="27" y2="27" stroke="url(#wg)" stroke-width="1" opacity=".4"/>
+382:           <line x1="22" y1="42" x2="22" y2="27" stroke="url(#wg)" stroke-width="1" opacity=".4"/>
+383:           <line x1="4"  y1="32" x2="17" y2="27" stroke="url(#wg)" stroke-width="1" opacity=".4"/>
+384:           <line x1="4"  y1="12" x2="17" y2="17" stroke="url(#wg)" stroke-width="1" opacity=".4"/>
+385:         </svg>
+386:       </div>
+387:       <h2>Hello, <span>user123</span> ✦</h2>
+388:       <p>I'm Nexus — your intelligent AI companion. Ask me anything, upload files, or use voice.</p>
+389:       <div class="chips">
+390:         <div class="chip" onclick="useChip(this)">💻 Write Python code for me</div>
+391:         <div class="chip" onclick="useChip(this)">🧠 Explain neural networks simply</div>
+392:         <div class="chip" onclick="useChip(this)">🚀 Suggest portfolio project ideas</div>
+393:         <div class="chip" onclick="useChip(this)">✦ What can you do?</div>
+394:         <div class="chip" onclick="useChip(this)">🔍 Review and debug my code</div>
+395:         <div class="chip" onclick="useChip(this)">📄 Summarize this document</div>
+396:       </div>
+397:     </div>
+398:   </div>
+399: 
+400:   <div id="inp-area">
+401:     <div id="file-prev">
+402:       <span id="fp-ico">📄</span>
+403:       <img id="fp-img" src="" alt=""/>
+404:       <span id="fp-name" style="flex:1;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"></span>
+405:       <button onclick="clearFile()" style="background:none;border:none;color:var(--danger);cursor:pointer;font-size:18px;">✕</button>
+406:     </div>
+407:     <div id="voice-ind">
+408:       <div class="vdot"></div>
+409:       Recording… click the mic again to stop and send
+410:     </div>
+411:     <div class="irow">
+412:       <textarea id="ui" rows="1" placeholder="Message Nexus…" onkeydown="hkey(event)" oninput="ars(this)"></textarea>
+413:       <button class="tbtn" onclick="document.getElementById('fi').click()" title="Attach file">📎</button>
+414:       <button class="tbtn" onclick="document.getElementById('ii').click()" title="Attach image">🖼</button>
+415:       <button class="tbtn" id="vbtn" onclick="toggleVoice()" title="Voice input">🎙</button>
+416:       <button id="sbtn" onclick="send()" title="Send">➤</button>
+417:     </div>
+418:     <div class="ihint">Enter to send · Shift+Enter new line · 📎 files · 🖼 images · 🎙 voice</div>
+419:   </div>
+420: </div>
+421: 
+422: <!-- ═══ SUBSCRIBE MODAL ════════════════════════════════════════════════════ -->
+423: <div id="moverlay" onclick="if(event.target===this)closeModal()">
+424:   <div class="modal">
+425:     <h2>⚡ <span>Upgrade NexusAI</span></h2>
+426:     <p>Unlock more power — more messages, priority speed, and advanced features</p>
+427:     <div class="plans">
+428:       <div class="pc" onclick="subscribe('free')">
+429:         <div class="pc-name">Free</div>
+430:         <div class="pc-price free">₹0<sub>/mo</sub></div>
+431:         <ul><li>50 messages/day</li><li>Text chat</li><li>File uploads</li><li>Chat history</li><li>Voice input</li></ul>
+432:         <button class="pc-btn">Current Plan</button>
+433:       </div>
+434:       <div class="pc rec" onclick="subscribe('pro')">
+435:         <div class="pc-badge">POPULAR</div>
+436:         <div class="pc-name">Pro</div>
+437:         <div class="pc-price pro">₹299<sub>/mo</sub></div>
+438:         <ul><li>500 messages/day</li><li>Priority speed</li><li>Image analysis</li><li>Extended context</li><li>All Free features</li></ul>
+439:         <button class="pc-btn">Go Pro →</button>
+440:       </div>
+441:       <div class="pc" onclick="subscribe('enterprise')">
+442:         <div class="pc-name">Enterprise</div>
+443:         <div class="pc-price ent">₹999<sub>/mo</sub></div>
+444:         <ul><li>Unlimited messages</li><li>All Pro features</li><li>API access</li><li>Priority support</li><li>Custom model</li></ul>
+445:         <button class="pc-btn">Go Enterprise →</button>
+446:       </div>
+447:     </div>
+448:     <button class="m-close" onclick="closeModal()">✕ Close</button>
+449:   </div>
+450: </div>
+451: 
+452: <!-- ═══ TOAST ══════════════════════════════════════════════════════════════ -->
+453: <div id="toast">
+454:   <span>⚠️</span>
+455:   <span id="toast-msg">You're running low on messages.</span>
+456:   <button onclick="openModal();hideToast()" style="background:linear-gradient(135deg,var(--p),var(--pp));border:none;color:#fff;padding:5px 12px;border-radius:7px;cursor:pointer;font-size:12px;font-weight:700;flex-shrink:0;">Upgrade</button>
+457:   <button onclick="hideToast()" style="background:none;border:none;color:var(--dim);cursor:pointer;font-size:17px;flex-shrink:0;">✕</button>
+458: </div>
+459: 
+460: <!-- ═══ SCRIPTS ════════════════════════════════════════════════════════════ -->
+461: <script>
+462: /* ── Inject user from server ── */
+463: const NX = {"id": 8, "username": "user123", "plan": "free"};
+464: 
+465: /* ── Canvas Particle Nebula ─────────────────────────────────────────────── */
+466: (()=>{
+467:   const cv=document.getElementById('bg'),ctx=cv.getContext('2d');
+468:   let W=cv.width=innerWidth,H=cv.height=innerHeight;
+469:   const COLS=['rgba(139,92,246,','rgba(6,182,212,','rgba(168,85,247,','rgba(91,33,182,'];
+470:   const pts=Array.from({length:85},()=>{
+471:     const c=COLS[Math.floor(Math.random()*COLS.length)];
+472:     return {x:Math.random()*W,y:Math.random()*H,vx:(Math.random()-.5)*.45,vy:(Math.random()-.5)*.45,r:1+Math.random()*2,c,ph:Math.random()*Math.PI*2};
+473:   });
+474:   let t=0;
+475:   function draw(){
+476:     t+=.005; ctx.clearRect(0,0,W,H);
+477:     pts.forEach((p,i)=>{
+478:       p.x+=p.vx; p.y+=p.vy;
+479:       if(p.x<0||p.x>W) p.vx*=-1;
+480:       if(p.y<0||p.y>H) p.vy*=-1;
+481:       const op=.25+.18*Math.sin(t+p.ph);
+482:       /* glow */
+483:       const gr=ctx.createRadialGradient(p.x,p.y,0,p.x,p.y,p.r*3);
+484:       gr.addColorStop(0,p.c+(op+.1)+')');
+485:       gr.addColorStop(1,p.c+'0)');
+486:       ctx.beginPath(); ctx.arc(p.x,p.y,p.r*3,0,Math.PI*2);
+487:       ctx.fillStyle=gr; ctx.fill();
+488:       /* dot */
+489:       ctx.beginPath(); ctx.arc(p.x,p.y,p.r,0,Math.PI*2);
+490:       ctx.fillStyle=p.c+op+')'; ctx.fill();
+491:       /* connections */
+492:       for(let j=i+1;j<pts.length;j++){
+493:         const q=pts[j],d=Math.hypot(p.x-q.x,p.y-q.y);
+494:         if(d<130){
+495:           ctx.beginPath(); ctx.moveTo(p.x,p.y); ctx.lineTo(q.x,q.y);
+496:           ctx.strokeStyle=`rgba(139,92,246,${.06*(1-d/130)})`;
+497:           ctx.lineWidth=.6; ctx.stroke();
+498:         }
+499:       }
+500:     });
+501:     requestAnimationFrame(draw);
+502:   }
+503:   draw();
+504:   window.addEventListener('resize',()=>{W=cv.width=innerWidth;H=cv.height=innerHeight;});
+505: })();
+506: 
+507: /* ── State ── */
+508: let sid=null,busy=false,pendFile=null,recog=null,recOn=false;
+509: 
+510: /* ── Helpers ── */
+511: const $=id=>document.getElementById(id);
+512: const esc=t=>String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+513: 
+514: function ars(el){el.style.height='auto';el.style.height=Math.min(el.scrollHeight,160)+'px';}
+515: function hkey(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();send();}}
+516: function useChip(el){$('ui').value=el.textContent.slice(2).trim();send();}
+517: function tstamp(){return new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});}
+518: 
+519: /* ── Refresh usage ── */
+520: async function refreshUsage(){
+521:   const d=await fetch('/api/usage').then(r=>r.json());
+522:   const pct=Math.min(100,(d.used/d.limit)*100);
+523:   $('usg-txt').textContent=`${d.used} / ${d.limit} messages today`;
+524:   $('usg-plan').textContent=d.plan.charAt(0).toUpperCase()+d.plan.slice(1);
+525:   const f=$('usg-fill'); f.style.width=pct+'%';
+526:   if(pct>=90) f.style.background='var(--danger)';
+527:   else if(pct>=70) f.style.background='var(--gold)';
+528:   else f.style.background='linear-gradient(90deg,var(--p),var(--c))';
+529:   if(pct>=80&&pct<100) showToast(`${d.remaining} messages left today.`);
+530:   if(pct>=100) showToast('Daily limit reached — upgrade to continue.');
+531: }
+532: 
+533: /* ── Toast ── */
+534: function showToast(msg){$('toast-msg').textContent=msg;$('toast').classList.add('show');setTimeout(hideToast,6000);}
+535: function hideToast(){$('toast').classList.remove('show');}
+536: 
+537: /* ── Modal ── */
+538: function openModal(){$('moverlay').classList.add('show');}
+539: function closeModal(){$('moverlay').classList.remove('show');}
+540: 
+541: async function subscribe(plan){
+542:   const r=await fetch('/api/subscribe',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({plan})}).then(r=>r.json());
+543:   if(r.ok){
+544:     $('pbadge').textContent=plan.charAt(0).toUpperCase()+plan.slice(1);
+545:     $('pbadge').className='badge b-'+plan;
+546:     closeModal(); refreshUsage();
+547:     showToast('✦ Plan upgraded to '+plan+'!');
+548:   }
+549: }
+550: 
+551: /* ── Logout ── */
+552: async function logout(){await fetch('/api/auth/logout',{method:'POST'});location.href='/login';}
+553: 
+554: /* ── New chat ── */
+555: function newChat(){
+556:   sid=null; pendFile=null; clearFile();
+557:   $('msgs').innerHTML=buildWelcome();
+558:   document.querySelectorAll('.cv').forEach(e=>e.classList.remove('act'));
+559:   $('ui').focus();
+560: }
+561: 
+562: function buildWelcome(){
+563:   return `<div id="welcome">
+564:     <div class="wlc-logo">
+565:       <svg width="44" height="44" viewBox="0 0 44 44">
+566:         <defs><linearGradient id="wg2" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#8b5cf6"/><stop offset="100%" stop-color="#06b6d4"/></linearGradient></defs>
+567:         <polygon points="22,2 40,12 40,32 22,42 4,32 4,12" fill="none" stroke="url(#wg2)" stroke-width="1.5"/>
+568:         <circle cx="22" cy="22" r="5" fill="url(#wg2)"/>
+569:       </svg>
+570:     </div>
+571:     <h2>Hello, <span style="background:linear-gradient(135deg,#8b5cf6,#06b6d4);-webkit-background-clip:text;-webkit-text-fill-color:transparent">${NX.username}</span> ✦</h2>
+572:     <p>I'm Nexus — your intelligent AI companion.</p>
+573:     <div class="chips">
+574:       <div class="chip" onclick="useChip(this)">💻 Write Python code for me</div>
+575:       <div class="chip" onclick="useChip(this)">🧠 Explain neural networks simply</div>
+576:       <div class="chip" onclick="useChip(this)">🚀 Suggest portfolio project ideas</div>
+577:       <div class="chip" onclick="useChip(this)">✦ What can you do?</div>
+578:     </div>
+579:   </div>`;
+580: }
+581: 
+582: /* ── Load conversations ── */
+583: async function loadConvs(search=''){
+584:   const url=search?`/api/convs?search=${encodeURIComponent(search)}`:`/api/convs`;
+585:   const data=await fetch(url).then(r=>r.json());
+586:   const el=$('convs');
+587:   if(!data.length){el.innerHTML='<div style="padding:14px 16px;color:var(--dim);font-size:13px;text-align:center;">No conversations yet</div>';return;}
+588:   el.innerHTML=data.map(c=>`
+589:     <div class="cv ${c.sid===sid?'act':''}" onclick="loadChat('${c.sid}')">
+590:       <span class="cv-ico">◈</span>
+591:       <span class="cv-ttl">${esc(c.title)}</span>
+592:       <button class="cv-del" onclick="delChat(event,'${c.sid}')" title="Delete">⊗</button>
+593:     </div>`).join('');
+594: }
+595: 
+596: function searchConvs(v){loadConvs(v);}
+597: 
+598: async function loadChat(s){
+599:   sid=s;
+600:   const msgs=await fetch(`/api/history/${s}`).then(r=>r.json());
+601:   const cont=$('msgs'); cont.innerHTML='';
+602:   msgs.forEach(m=>addBubble(m.role,m.content,false,m.file_name,m.file_type,m.ts));
+603:   cont.scrollTop=cont.scrollHeight;
+604:   loadConvs();
+605: }
+606: 
+607: async function delChat(e,s){
+608:   e.stopPropagation();
+609:   await fetch(`/api/convs/${s}`,{method:'DELETE'});
+610:   if(sid===s) newChat(); else loadConvs();
+611: }
+612: 
+613: /* ── File uploads ── */
+614: $('fi').addEventListener('change',async function(){
+615:   if(!this.files[0]) return;
+616:   await uploadFile(this.files[0]); this.value='';
+617: });
+618: $('ii').addEventListener('change',async function(){
+619:   if(!this.files[0]) return;
+620:   await uploadFile(this.files[0]); this.value='';
+621: });
+622: 
+623: async function uploadFile(file){
+624:   const form=new FormData(); form.append('file',file);
+625:   const d=await fetch('/api/upload',{method:'POST',body:form}).then(r=>r.json());
+626:   if(d.error){alert(d.error);return;}
+627:   pendFile=d;
+628:   $('file-prev').classList.add('show');
+629:   $('fp-name').textContent=d.filename;
+630:   const img=$('fp-img');
+631:   if(d.type==='image'){$('fp-ico').textContent='🖼';img.src=d.url;img.style.display='block';}
+632:   else{$('fp-ico').textContent='📄';img.style.display='none';}
+633: }
+634: function clearFile(){pendFile=null;$('file-prev').classList.remove('show');$('fp-img').style.display='none';}
+635: 
+636: /* ── Voice ── */
+637: function toggleVoice(){
+638:   const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+639:   if(!SR){alert('Voice is supported in Chrome only. Please use Chrome browser.');return;}
+640:   if(recOn){recog.stop();return;}
+641:   recog=new SR(); recog.lang='en-US'; recog.interimResults=true; recog.continuous=false;
+642:   recog.onstart=()=>{recOn=true;$('vbtn').classList.add('rec');$('voice-ind').classList.add('show');};
+643:   recog.onresult=e=>{
+644:     const t=Array.from(e.results).map(r=>r[0].transcript).join('');
+645:     $('ui').value=t; ars($('ui'));
+646:   };
+647:   recog.onend=()=>{recOn=false;$('vbtn').classList.remove('rec');$('voice-ind').classList.remove('show');};
+648:   recog.onerror=()=>{recOn=false;$('vbtn').classList.remove('rec');$('voice-ind').classList.remove('show');};
+649:   recog.start();
+650: }
+651: 
+652: /* ── Format message ── */
+653: function fmt(text, streaming=false){
+654:   if(!text) return '';
+655:   let html = '';
+656:   try {
+657:     const renderer = new marked.Renderer();
+658:     renderer.code = function(code, lang) {
+659:       const id = 'cb' + Math.random().toString(36).slice(2, 8);
+660:       return '<pre id="' + id + '"><button class="cp-btn" onclick="cpCode('' + id + '')">Copy</button><code class="language-' + (lang || '') + '">' + esc(code.trim()) + '</code></pre>';
+661:     };
+662:     marked.setOptions({ renderer: renderer, gfm: true, breaks: true });
+663:     html = marked.parse(text);
+664:   } catch(e) {
+665:     html = esc(text);
+666:   }
+667:   if(streaming) {
+668:     if(html.endsWith('</p>\n')) {
+669:       html = html.slice(0, -5) + '<span class="cursor"></span></p>\n';
+670:     } else if(html.endsWith('</p>')) {
+671:       html = html.slice(0, -4) + '<span class="cursor"></span></p>';
+672:     } else if(html.endsWith('</li>\n')) {
+673:       html = html.slice(0, -6) + '<span class="cursor"></span></li>\n';
+674:     } else {
+675:       html += '<span class="cursor"></span>';
+676:     }
+677:   }
+678:   return html;
+679: }
+680: 
+681: function cpCode(id){
+682:   navigator.clipboard.writeText(document.querySelector(`#${id} code`).innerText).then(()=>{
+683:     const b=document.querySelector(`#${id} .cp-btn`);
+684:     b.textContent='Copied!'; setTimeout(()=>b.textContent='Copy',2000);
+685:   });
+686: }
+687: 
+688: /* ── Add bubble ── */
+689: function addBubble(role,content,streaming=false,fileName=null,fileType=null,ts=null){
+690:   const w=document.getElementById('welcome'); if(w) w.remove();
+691:   const cont=$('msgs');
+692:   const row=document.createElement('div');
+693:   row.className='mrow '+role;
+694:   if(streaming) row.id='srow';
+695:   const init=role==='user'?(NX.username||'U')[0].toUpperCase():'✦';
+696:   let fHtml='';
+697:   if(fileName){
+698:     if(fileType==='image') fHtml=`<img class="chat-img" src="/uploads/${esc(fileName)}" alt="img" onerror="this.style.display='none'"/>`;
+699:     else fHtml=`<div class="fatag"><span>📄</span><span>${esc(fileName)}</span></div>`;
+700:   }
+701:   const time=ts?new Date(ts).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}):tstamp();
+702:   row.innerHTML=`
+703:     <div class="av ${role}">${init}</div>
+704:     <div>
+705:       <div class="bbl" ${streaming?'id="sc"':''}>
+706:         ${fHtml}
+707:         ${streaming?'<span class="cursor"></span>':fmt(content)}
+708:       </div>
+709:       <div class="mts">${time}</div>
+710:     </div>`;
+711:   cont.appendChild(row);
+712:   cont.scrollTop=cont.scrollHeight;
+713:   return row;
+714: }
+715: 
+716: /* ── SEND ── */
+717: async function send(){
+718:   if(busy) return;
+719:   const inp=$('ui'), msg=inp.value.trim();
+720:   if(!msg&&!pendFile) return;
+721:   inp.value=''; inp.style.height='auto';
+722:   $('sbtn').disabled=true; busy=true;
+723: 
+724:   const fName=pendFile?.filename||null, fType=pendFile?.type||null;
+725:   addBubble('user',msg,false,fName,fType);
+726:   const fp=pendFile?{...pendFile}:null; clearFile();
+727:   addBubble('ai','',true);
+728:   const sc=$('sc'), cont=$('msgs');
+729:   let full='';
+730: 
+731:   try{
+732:     const res=await fetch('/api/chat',{
+733:       method:'POST',headers:{'Content-Type':'application/json'},
+734:       body:JSON.stringify({message:msg,sid,file:fp})
+735:     });
+736:     if(res.status===429){
+737:       const d=await res.json();
+738:       sc.innerHTML=`<span style="color:var(--gold)">⚠️ ${esc(d.error)}</span>`;
+739:       showToast(d.error); busy=false; $('sbtn').disabled=false; return;
+740:     }
+741:     const reader=res.body.getReader(), dec=new TextDecoder();
+742:     while(true){
+743:       const {value,done}=await reader.read(); if(done) break;
+744:       const chunk=dec.decode(value);
+745:       for(const line of chunk.split('
+746: ')){
+747:         if(!line.startsWith('data: ')) continue;
+748:         try{
+749:           const d=JSON.parse(line.slice(6));
+750:           if(d.token){full+=d.token;sc.innerHTML=fmt(full,true);cont.scrollTop=cont.scrollHeight;}
+751:           if(d.sid&&!sid) sid=d.sid;
+752:           if(d.done){sc.innerHTML=fmt(full,false);const sr=$('srow');if(sr)sr.id='';sc.id='';loadConvs();refreshUsage();}
+753:           if(d.error){sc.innerHTML=`<span style="color:var(--danger)">⚠️ ${esc(d.error)}<br><small>Make sure <b>ollama serve</b> is running in a terminal.</small></span>`;}
+754:         }catch(_){}
+755:       }
+756:     }
+757:   }catch(err){
+758:     sc.innerHTML=`<span style="color:var(--danger)">⚠️ Could not reach the server.<br><small>Check <b>python main.py</b> is running.</small></span>`;
+759:   }
+760:   busy=false; $('sbtn').disabled=false; inp.focus();
+761: }
+762: 
+763: /* ── Boot ── */
+764: loadConvs(); refreshUsage(); $('ui').focus();
+765: </script>
+766: </body></html>

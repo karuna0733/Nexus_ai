@@ -1,0 +1,7 @@
+venv/
+__pycache__/
+*.pyc
+.env
+nexus.db
+uploads/
+*.log
