@@ -1284,12 +1284,12 @@ function fmt(text, streaming=false){{
     html = esc(text);
   }}
   if(streaming) {{
-    if(html.endsWith('</p>\n')) {{
-      html = html.slice(0, -5) + '<span class="cursor"></span></p>\n';
+    if(html.endsWith('</p>\\n')) {{
+      html = html.slice(0, -5) + '<span class="cursor"></span></p>\\n';
     }} else if(html.endsWith('</p>')) {{
       html = html.slice(0, -4) + '<span class="cursor"></span></p>';
-    }} else if(html.endsWith('</li>\n')) {{
-      html = html.slice(0, -6) + '<span class="cursor"></span></li>\n';
+    }} else if(html.endsWith('</li>\\n')) {{
+      html = html.slice(0, -6) + '<span class="cursor"></span></li>\\n';
     }} else {{
       html += '<span class="cursor"></span>';
     }}
@@ -1363,7 +1363,7 @@ async function send(){{
     while(true){{
       const {{value,done}}=await reader.read(); if(done) break;
       const chunk=dec.decode(value);
-      for(const line of chunk.split('\n')){{
+      for(const line of chunk.split('\\n')){{
         if(!line.startsWith('data: ')) continue;
         try{{
           const d=JSON.parse(line.slice(6));
