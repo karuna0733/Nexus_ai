@@ -32,13 +32,13 @@ TEXT_EXT = {".txt",".py",".js",".ts",".html",".css",".md",".json",".csv",".xml",
 IMG_EXT  = {".jpg",".jpeg",".png",".gif",".webp",".bmp"}
 
 SYSTEM_PROMPT = (
-    "You are Nexus, an advanced AI assistant built by NexusAI. "
+    "You are Nexus AI, an advanced AI assistant built by Nexus AI. "
     "You are helpful, creative, and precise. "
     "Always format code with proper markdown code blocks with language tags. "
     "Be concise yet thorough. Use bullet points and headers for complex answers."
 )
 
-app = FastAPI(title="NexusAI")
+app = FastAPI(title="Nexus AI")
 app.mount("/uploads", StaticFiles(directory=str(UPLOAD_DIR)), name="uploads")
 database.init_db()
 
@@ -56,7 +56,7 @@ LOGIN_HTML = """<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>NexusAI — Sign In</title>
+<title>Nexus AI — Sign In</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;}
 :root{
@@ -180,7 +180,7 @@ body{
       </svg>
     </div>
     <div class="logo-txt">
-      <h1>Nexus<em>AI</em></h1>
+      <h1>Nexus <em>AI</em></h1>
       <p>Intelligent AI Companion</p>
     </div>
   </div>
@@ -194,19 +194,19 @@ body{
   <div class="alert" id="alert"></div>
 
   <!-- Login -->
-  <div id="p-login">
-    <div class="field"><label>Email</label><input type="email" id="le" placeholder="you@example.com" autocomplete="email"/></div>
-    <div class="field"><label>Password</label><input type="password" id="lp" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()"/></div>
-    <button class="btn" id="lb" onclick="doLogin()"><div class="spin" id="ls"></div><span id="lt">Sign In →</span></button>
-  </div>
+  <form id="p-login" onsubmit="event.preventDefault(); doLogin();">
+    <div class="field"><label>Email</label><input type="email" id="le" name="email" placeholder="you@example.com" autocomplete="username email" required/></div>
+    <div class="field"><label>Password</label><input type="password" id="lp" name="password" placeholder="••••••••" autocomplete="current-password" required/></div>
+    <button type="submit" class="btn" id="lb"><div class="spin" id="ls"></div><span id="lt">Sign In →</span></button>
+  </form>
 
   <!-- Register -->
-  <div id="p-reg">
-    <div class="field"><label>Username</label><input type="text" id="rn" placeholder="YourName" autocomplete="username"/></div>
-    <div class="field"><label>Email</label><input type="email" id="re" placeholder="you@example.com" autocomplete="email"/></div>
-    <div class="field"><label>Password</label><input type="password" id="rp" placeholder="Min 6 characters" onkeydown="if(event.key==='Enter')doReg()"/></div>
-    <button class="btn" id="rb" onclick="doReg()"><div class="spin" id="rs"></div><span id="rt">Create Account →</span></button>
-  </div>
+  <form id="p-reg" onsubmit="event.preventDefault(); doReg();" style="display:none;">
+    <div class="field"><label>Username</label><input type="text" id="rn" name="username" placeholder="YourName" autocomplete="username" required/></div>
+    <div class="field"><label>Email</label><input type="email" id="re" name="email" placeholder="you@example.com" autocomplete="email" required/></div>
+    <div class="field"><label>Password</label><input type="password" id="rp" name="password" placeholder="Min 6 characters" autocomplete="new-password" required/></div>
+    <button type="submit" class="btn" id="rb"><div class="spin" id="rs"></div><span id="rt">Create Account →</span></button>
+  </form>
 
   <div class="note">By continuing you agree to our <a href="#">Terms</a> &amp; <a href="#">Privacy</a></div>
 </div>
@@ -323,78 +323,107 @@ def build_chat_html(user: dict, backend_status: str) -> str:
 <html lang="en">
 <head>
 <meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>NexusAI</title>
+<title>Nexus AI</title>
 <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@400;500;600;700;900&display=swap" rel="stylesheet">
 <style>
 *{{margin:0;padding:0;box-sizing:border-box;}}
 :root{{
-  --bg:#060610;--sb:#04040d;--card:#0c0c1e;--msg-ai:#0d0d20;
+  --bg:#07080c;--sb:#0c0d14;--card:#12131c;--msg-ai:#12131e;
   --p:#8b5cf6;--c:#06b6d4;--pp:#7c3aed;
-  --text:#e2e8f0;--dim:#4b5563;--border:#1a1a35;
+  --text:#f4f4f5;--dim:#71717a;--border:rgba(255,255,255,0.06);
   --danger:#f43f5e;--gold:#f59e0b;
-  --code:#070712;
+  --code:#090911;
 }}
 html,body{{height:100%;overflow:hidden;}}
-body{{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--text);display:flex;position:relative;}}
-::-webkit-scrollbar{{width:4px;}} ::-webkit-scrollbar-thumb{{background:#1e1e40;border-radius:4px;}}
+body{{
+  font-family:'Inter',system-ui,sans-serif;
+  background:var(--bg);color:var(--text);display:flex;position:relative;
+}}
+::-webkit-scrollbar{{width:4px;}} ::-webkit-scrollbar-thumb{{background:#27272a;border-radius:4px;}}
 
 /* canvas bg */
-#bg{{position:fixed;inset:0;z-index:0;pointer-events:none;}}
+#bg{{position:fixed;inset:0;z-index:0;pointer-events:none;opacity:0.35;}}
 
 /* ── SIDEBAR ── */
 #sb{{
-  width:272px;background:var(--sb);display:flex;flex-direction:column;
+  width:280px;background:var(--sb);display:flex;flex-direction:column;
   border-right:1px solid var(--border);flex-shrink:0;z-index:10;
   position:relative;
+  backdrop-filter:blur(20px);
 }}
-/* subtle purple left glow on sidebar */
-#sb::after{{content:'';position:absolute;left:0;top:20%;bottom:20%;width:1px;background:linear-gradient(to bottom,transparent,var(--p),transparent);}}
 
-.sb-top{{padding:16px 14px 12px;border-bottom:1px solid var(--border);}}
-.nx-logo{{display:flex;align-items:center;gap:12px;}}
+.sb-top{{padding:20px 18px 14px;}}
+.nx-logo{{display:flex;align-items:center;gap:12px;margin-bottom:18px;}}
 .nx-logo svg{{flex-shrink:0;}}
-.nx-name{{font-size:17px;font-weight:900;letter-spacing:-.4px;}}
-.nx-name em{{font-style:normal;background:linear-gradient(135deg,var(--p),var(--c));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}}
+.nx-name{{font-size:19px;font-weight:700;letter-spacing:-0.5px;color:#fff;font-family:'Outfit',sans-serif;}}
 .nx-sub{{font-size:11px;color:var(--dim);margin-top:1px;}}
 
 #new-btn{{
   display:flex;align-items:center;justify-content:center;gap:8px;
-  width:100%;margin-top:12px;padding:10px 14px;
+  width:100%;padding:10px 14px;
   background:linear-gradient(135deg,var(--p),var(--pp));
-  color:#fff;border:none;border-radius:10px;font-size:13.5px;font-weight:700;cursor:pointer;
-  box-shadow:0 4px 18px rgba(139,92,246,.3);transition:all .2s;
+  color:#fff;border:none;border-radius:12px;font-size:13.5px;font-weight:600;cursor:pointer;
+  box-shadow:0 4px 18px rgba(139,92,246,.25);transition:all .2s;
 }}
-#new-btn:hover{{transform:translateY(-1px);box-shadow:0 6px 24px rgba(139,92,246,.4);}}
+#new-btn:hover{{transform:translateY(-1px);box-shadow:0 6px 24px rgba(139,92,246,.35);}}
 
-.sb-search{{padding:10px 12px 6px;}}
-.sb-search input{{
-  width:100%;padding:8px 12px 8px 34px;
-  background:var(--card);border:1px solid var(--border);
-  border-radius:9px;color:var(--text);font-size:13px;outline:none;
-  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' fill='%234b5563' viewBox='0 0 16 16'%3E%3Cpath d='M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.099zm-5.242 1.856a5.5 5.5 0 1 1 0-11 5.5 5.5 0 0 1 0 11z'/%3E%3C/svg%3E");
-  background-repeat:no-repeat;background-position:10px center;
-  transition:border-color .2s;
+.sb-search-wrap{{position:relative;margin:0 14px 12px;}}
+.sb-search-wrap input{{
+  width:100%;padding:9px 36px 9px 34px;
+  background:rgba(255,255,255,0.03);border:1px solid var(--border);
+  border-radius:10px;color:var(--text);font-size:13.5px;outline:none;
+  transition:all .2s;
 }}
-.sb-search input:focus{{border-color:var(--p);}}
-.sb-search input::placeholder{{color:var(--dim);}}
+.sb-search-wrap input:focus{{border-color:var(--p);background:rgba(255,255,255,0.06);}}
+.sb-search-icon{{
+  position:absolute;left:11px;top:50%;transform:translateY(-50%);
+  display:flex;align-items:center;color:var(--dim);
+}}
+.sb-search-kbd{{
+  position:absolute;right:11px;top:50%;transform:translateY(-50%);
+  background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);
+  border-radius:5px;padding:1px 5px;font-size:10px;color:var(--dim);
+  font-family:monospace;
+}}
 
-.sb-lbl{{padding:8px 16px 4px;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--dim);}}
+/* Sidebar navigation links */
+.sb-nav{{
+  padding:0 10px 12px;display:flex;flex-direction:column;gap:4px;
+  border-bottom:1px solid var(--border);margin-bottom:12px;
+}}
+.sb-nav-item{{
+  display:flex;align-items:center;gap:12px;padding:9px 12px;
+  color:var(--dim);text-decoration:none;font-size:13.5px;font-weight:500;
+  border-radius:10px;transition:all 0.15s;
+}}
+.sb-nav-item:hover{{
+  background:rgba(255,255,255,0.04);color:#fff;
+}}
+.sb-nav-item.active{{
+  background:rgba(139,92,246,0.1);color:var(--p);font-weight:600;
+}}
+.sb-nav-icon{{
+  display:flex;align-items:center;justify-content:center;
+}}
+
+.sb-lbl{{padding:14px 16px 6px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--dim);}}
 #convs{{flex:1;overflow-y:auto;padding:0 8px 8px;}}
 
 .cv{{
-  display:flex;align-items:center;gap:8px;padding:9px 10px;
-  border-radius:9px;cursor:pointer;font-size:13px;
-  transition:background .15s;margin-bottom:1px;
+  display:flex;align-items:center;gap:10px;padding:8px 12px;
+  border-radius:10px;cursor:pointer;font-size:13.5px;
+  transition:all .15s;margin-bottom:2px;color:#e4e4e7;
 }}
-.cv:hover{{background:var(--card);}}
-.cv.act{{background:var(--card);border-left:2px solid var(--p);padding-left:8px;}}
-.cv-ico{{font-size:15px;flex-shrink:0;opacity:.7;}}
+.cv:hover{{background:rgba(255,255,255,0.03);}}
+.cv.act{{background:var(--card);border:1px solid var(--border);color:#fff;}}
+.cv-ico{{font-size:14px;flex-shrink:0;opacity:.5;display:flex;align-items:center;}}
 .cv-ttl{{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}}
-.cv-del{{opacity:0;background:none;border:none;color:var(--danger);cursor:pointer;padding:3px 6px;border-radius:4px;font-size:13px;}}
+.cv-del{{opacity:0;background:none;border:none;color:var(--danger);cursor:pointer;padding:2px 4px;border-radius:4px;font-size:13px;}}
 .cv:hover .cv-del{{opacity:1;}}
 
 /* Usage */
-.usg{{padding:10px 16px 6px;}}
+.usg{{padding:12px 16px 8px;border-top:1px solid var(--border);}}
 .usg-row{{display:flex;justify-content:space-between;font-size:11px;color:var(--dim);margin-bottom:5px;}}
 .usg-bar{{height:3px;background:rgba(255,255,255,.05);border-radius:2px;}}
 .usg-fill{{height:100%;border-radius:2px;transition:width .5s,background .5s;background:linear-gradient(90deg,var(--p),var(--c));}}
@@ -402,114 +431,181 @@ body{{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var
 /* Profile */
 .prof{{
   padding:12px 14px;border-top:1px solid var(--border);
-  display:flex;align-items:center;gap:10px;
+  display:flex;align-items:center;gap:10px;background:rgba(0,0,0,0.15);
 }}
 .av-big{{
-  width:34px;height:34px;border-radius:50%;flex-shrink:0;
+  width:32px;height:32px;border-radius:50%;flex-shrink:0;
   display:flex;align-items:center;justify-content:center;
-  font-size:14px;font-weight:800;color:#fff;
+  font-size:13px;font-weight:700;color:#fff;
   background:linear-gradient(135deg,var(--p),var(--c));
 }}
 .prof-info{{flex:1;min-width:0;}}
-.prof-name{{font-size:13px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}}
+.prof-name{{font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#fff;}}
 .badge{{
-  display:inline-block;font-size:10px;font-weight:700;
-  padding:2px 8px;border-radius:20px;margin-top:2px;text-transform:uppercase;
+  display:inline-block;font-size:9px;font-weight:700;
+  padding:1px 6px;border-radius:20px;margin-top:1px;text-transform:uppercase;
 }}
-.b-free{{background:rgba(75,85,99,.2);color:var(--dim);}}
+.b-free{{background:rgba(113,113,122,.2);color:var(--dim);}}
 .b-pro {{background:rgba(139,92,246,.2);color:var(--p);}}
 .b-enterprise{{background:rgba(245,158,11,.2);color:var(--gold);}}
-.pi-btn{{background:none;border:none;color:var(--dim);cursor:pointer;padding:7px;border-radius:8px;font-size:17px;transition:color .15s,background .15s;}}
-.pi-btn:hover{{color:var(--text);background:var(--card);}}
+.pi-btn{{background:none;border:none;color:var(--dim);cursor:pointer;padding:6px;border-radius:8px;font-size:15px;transition:all .15s;}}
+.pi-btn:hover{{color:#fff;background:rgba(255,255,255,0.05);}}
 
 /* ── MAIN ── */
 #main{{flex:1;display:flex;flex-direction:column;overflow:hidden;z-index:10;position:relative;min-width:0;}}
 
 /* Header */
 #hdr{{
-  padding:13px 24px;border-bottom:1px solid var(--border);
+  padding:14px 24px;
   display:flex;align-items:center;gap:12px;flex-shrink:0;
-  background:rgba(6,6,16,.85);backdrop-filter:blur(16px);
+  z-index:20;
 }}
-.hdr-icon{{
-  width:40px;height:40px;border-radius:12px;flex-shrink:0;
-  display:flex;align-items:center;justify-content:center;
-  background:linear-gradient(135deg,rgba(139,92,246,.3),rgba(6,182,212,.2));
-  border:1px solid rgba(139,92,246,.25);
+.assistant-dropdown{{
+  position:relative;display:inline-block;
 }}
-.hdr-title{{font-size:15px;font-weight:800;}}
-.hdr-sub{{font-size:11.5px;color:var(--dim);margin-top:2px;}}
+.assistant-dropdown-btn{{
+  background:rgba(255,255,255,0.03);
+  border:1px solid var(--border);
+  padding:8px 16px;border-radius:12px;
+  color:#fff;font-size:14px;font-weight:600;
+  cursor:pointer;display:flex;align-items:center;
+  gap:8px;transition:all 0.2s;
+}}
+.assistant-dropdown-btn:hover{{
+  background:rgba(255,255,255,0.06);
+  border-color:rgba(255,255,255,0.12);
+}}
+
 .online-pill{{
   margin-left:auto;display:flex;align-items:center;gap:6px;
-  font-size:11px;color:var(--dim);background:var(--card);
-  padding:4px 12px;border-radius:20px;border:1px solid var(--border);
+  font-size:11.5px;color:var(--dim);background:rgba(255,255,255,0.02);
+  padding:5px 12px;border-radius:20px;border:1px solid var(--border);
 }}
 .odot{{width:7px;height:7px;background:#22c55e;border-radius:50%;animation:blink 2s infinite;}}
 @keyframes blink{{0%,100%{{opacity:1}}50%{{opacity:.3}}}}
 
 /* Messages */
-#msgs{{flex:1;overflow-y:auto;padding:28px 6% 20px;display:flex;flex-direction:column;gap:22px;}}
+#msgs{{flex:1;overflow-y:auto;padding:20px 8% 20px;display:flex;flex-direction:column;gap:20px;}}
 
-/* Welcome */
-#welcome{{display:flex;flex-direction:column;align-items:center;justify-content:center;flex:1;gap:18px;text-align:center;padding:40px;}}
-.wlc-logo{{
-  width:82px;height:82px;border-radius:24px;
-  display:flex;align-items:center;justify-content:center;
-  background:linear-gradient(135deg,rgba(139,92,246,.2),rgba(6,182,212,.1));
-  border:1px solid rgba(139,92,246,.3);
-  animation:float 4s ease-in-out infinite;
-  box-shadow:0 0 60px rgba(139,92,246,.2);
+/* Welcome screen with orb */
+#welcome{{
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  flex:1;text-align:center;padding:40px 20px;
 }}
-@keyframes float{{0%,100%{{transform:translateY(0)}}50%{{transform:translateY(-12px)}}}}
-#welcome h2{{font-size:26px;font-weight:900;}}
-#welcome h2 span{{background:linear-gradient(135deg,var(--p),var(--c));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}}
-#welcome p{{color:var(--dim);font-size:14.5px;max-width:420px;line-height:1.65;}}
-.chips{{display:flex;flex-wrap:wrap;justify-content:center;gap:8px;margin-top:6px;max-width:540px;}}
-.chip{{
-  background:var(--card);border:1px solid var(--border);
-  border-radius:22px;padding:8px 16px;font-size:13px;
-  cursor:pointer;color:var(--text);transition:all .2s;
+.orb-container{{
+  display:flex;justify-content:center;align-items:center;margin-bottom:28px;
+  perspective:1000px;
 }}
-.chip:hover{{border-color:var(--p);color:var(--p);transform:translateY(-2px);box-shadow:0 4px 16px rgba(139,92,246,.15);}}
+.glowing-orb{{
+  position:relative;width:130px;height:130px;border-radius:50%;
+  background:radial-gradient(circle at 35% 35%, 
+    #ffffff 0%, 
+    #cbd5e1 15%, 
+    #a78bfa 45%, 
+    #22d3ee 70%, 
+    #f472b6 90%, 
+    #0f172a 100%
+  );
+  box-shadow: 
+    0 0 50px rgba(139, 92, 246, 0.45),
+    0 0 100px rgba(6, 182, 212, 0.25),
+    inset -12px -12px 30px rgba(244, 114, 182, 0.35),
+    inset 12px 12px 30px rgba(255, 255, 255, 0.75);
+  animation: orb-float 5s ease-in-out infinite, orb-morph 7s ease-in-out infinite;
+}}
+.orb-shine{{
+  position:absolute;top:15px;left:15px;width:100px;height:100px;border-radius:50%;
+  background:radial-gradient(circle at 20% 20%, 
+    rgba(255, 255, 255, 0.75) 0%, 
+    rgba(255, 255, 255, 0) 50%
+  );
+  filter:blur(1px);pointer-events:none;
+}}
+@keyframes orb-float {{
+  0%, 100% {{ transform: translateY(0px) rotate(0deg); }}
+  50% {{ transform: translateY(-12px) rotate(180deg); }}
+}}
+@keyframes orb-morph {{
+  0%, 100% {{ border-radius: 50% 50% 50% 50%; }}
+  25% {{ border-radius: 48% 52% 49% 51% / 51% 48% 52% 49%; }}
+  50% {{ border-radius: 52% 48% 53% 47% / 47% 52% 48% 53%; }}
+  75% {{ border-radius: 49% 51% 48% 52% / 53% 49% 51% 48%; }}
+}}
 
-/* Bubbles */
+#welcome h2{{
+  font-size:32px;font-weight:500;color:#fff;
+  letter-spacing:-0.5px;margin-bottom:8px;font-family:'Outfit',sans-serif;
+}}
+.user-span{{
+  background:linear-gradient(135deg,#fff,#c084fc);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+}}
+#welcome p{{
+  font-size:26px;font-weight:500;color:var(--dim);
+  letter-spacing:-0.5px;font-family:'Outfit',sans-serif;margin-bottom:10px;
+}}
+
+/* Suggestion cards */
+.suggest-grid{{
+  display:grid;grid-template-columns:repeat(3,1fr);gap:16px;
+  width:100%;max-width:880px;margin-top:36px;
+}}
+.suggest-card{{
+  background:rgba(255, 255, 255, 0.02);
+  border:1px solid rgba(255, 255, 255, 0.04);
+  border-radius:16px;padding:18px 20px;text-align:left;
+  cursor:pointer;transition:all 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+  backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
+}}
+.suggest-card:hover{{
+  background:rgba(255, 255, 255, 0.05);
+  border-color:rgba(139, 92, 246, 0.35);
+  transform:translateY(-4px);
+  box-shadow:0 12px 24px rgba(0,0,0,0.25), 0 0 0 1px rgba(139,92,246,0.1);
+}}
+.suggest-card-title{{
+  font-size:15px;font-weight:600;color:#fff;margin-bottom:6px;
+}}
+.suggest-card-desc{{
+  font-size:12.5px;color:var(--dim);line-height:1.45;
+}}
+
+/* Bubbles styling */
 .mrow{{display:flex;gap:12px;align-items:flex-start;animation:up .2s ease;}}
 @keyframes up{{from{{opacity:0;transform:translateY(8px)}}to{{opacity:1;transform:translateY(0)}}}}
 .mrow.user{{flex-direction:row-reverse;}}
-.av{{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;flex-shrink:0;}}
-.av.ai  {{background:linear-gradient(135deg,rgba(139,92,246,.3),rgba(6,182,212,.2));border:1px solid rgba(139,92,246,.3);}}
+.av{{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;flex-shrink:0;}}
+.av.ai  {{background:rgba(139,92,246,0.15);border:1px solid rgba(139,92,246,0.25);color:var(--p);}}
 .av.user{{background:linear-gradient(135deg,var(--p),var(--pp));color:#fff;}}
-.bbl{{max-width:72%;padding:13px 17px;border-radius:18px;font-size:14px;line-height:1.75;}}
-.mrow.ai   .bbl{{background:var(--msg-ai);border-top-left-radius:4px;border-left:2px solid rgba(139,92,246,.3);}}
-.mrow.user .bbl{{background:linear-gradient(135deg,var(--p),var(--pp));color:#fff;border-top-right-radius:4px;}}
-.mts{{font-size:10.5px;color:var(--dim);margin-top:4px;padding:0 4px;}}
+.bbl{{max-width:70%;padding:13px 18px;border-radius:18px;font-size:14px;line-height:1.65;}}
+.mrow.ai .bbl{{background:var(--msg-ai);border:1px solid rgba(255,255,255,0.03);color:#e4e4e7;}}
+.mrow.user .bbl{{background:linear-gradient(135deg,var(--p),var(--pp));color:#fff;}}
+.mts{{font-size:10.5px;color:var(--dim);margin-top:5px;padding:0 4px;}}
 .mrow.user .mts{{text-align:right;}}
-.cursor{{display:inline-block;width:2px;height:15px;background:var(--p);animation:blink .6s infinite;vertical-align:text-bottom;margin-left:2px;border-radius:1px;}}
-.bbl pre{{background:var(--code);border:1px solid var(--border);border-radius:9px;padding:14px 16px;overflow-x:auto;font-size:13px;margin:10px 0;position:relative;}}
+.cursor{{display:inline-block;width:2px;height:15px;background:var(--p);animation:blink .6s infinite;vertical-align:text-bottom;margin-left:2px;}}
+.bbl pre{{background:var(--code);border:1px solid var(--border);border-radius:10px;padding:14px 16px;overflow-x:auto;font-size:13px;margin:12px 0;position:relative;}}
 .bbl code{{font-family:'Cascadia Code','Consolas','Monaco',monospace;}}
-.cp-btn{{position:absolute;top:8px;right:8px;background:var(--card);border:1px solid var(--border);color:var(--dim);border-radius:5px;padding:3px 10px;font-size:11px;cursor:pointer;}}
-.cp-btn:hover{{color:var(--text);}}
+.cp-btn{{position:absolute;top:8px;right:8px;background:rgba(255,255,255,0.03);border:1px solid var(--border);color:var(--dim);border-radius:6px;padding:4px 10px;font-size:11px;cursor:pointer;}}
+.cp-btn:hover{{color:#fff;background:rgba(255,255,255,0.08);}}
 .ic{{background:var(--code);padding:2px 6px;border-radius:4px;font-family:'Cascadia Code','Consolas',monospace;font-size:13px;border:1px solid var(--border);}}
 .chat-img{{max-width:100%;max-height:280px;border-radius:10px;display:block;margin-bottom:8px;}}
-.fatag{{display:flex;align-items:center;gap:8px;background:rgba(139,92,246,.08);border:1px solid rgba(139,92,246,.2);border-radius:8px;padding:7px 11px;margin-bottom:8px;font-size:12.5px;color:var(--dim);}}
+.fatag{{display:flex;align-items:center;gap:8px;background:rgba(139,92,246,0.06);border:1px solid rgba(139,92,246,0.15);border-radius:8px;padding:7px 11px;margin-bottom:8px;font-size:12.5px;color:var(--dim);}}
 
 .bbl p{{margin-bottom:8px;line-height:1.6;}}
 .bbl p:last-child{{margin-bottom:0;}}
-.bbl h1, .bbl h2, .bbl h3, .bbl h4{{color:#fff;margin-top:14px;margin-bottom:8px;font-weight:700;line-height:1.3;}}
-.bbl h1{{font-size:1.45em;}}
-.bbl h2{{font-size:1.3em;}}
-.bbl h3{{font-size:1.15em;}}
+.bbl h1, .bbl h2, .bbl h3, .bbl h4{{color:#fff;margin-top:16px;margin-bottom:8px;font-weight:700;line-height:1.3;}}
+.bbl h1{{font-size:1.4em;}} .bbl h2{{font-size:1.25em;}} .bbl h3{{font-size:1.15em;}}
 .bbl ul, .bbl ol{{margin-left:22px;margin-bottom:8px;}}
 .bbl li{{margin-bottom:4px;}}
-.bbl blockquote{{border-left:3px solid var(--p);padding-left:12px;color:var(--dim);margin:10px 0;font-style:italic;}}
-.bbl table{{border-collapse:collapse;width:100%;margin:14px 0;font-size:13.5px;}}
+.bbl blockquote{{border-left:3px solid var(--p);padding-left:12px;color:var(--dim);margin:12px 0;font-style:italic;}}
+.bbl table{{border-collapse:collapse;width:100%;margin:14px 0;font-size:13px;}}
 .bbl th, .bbl td{{border:1px solid var(--border);padding:8px 10px;text-align:left;}}
-.bbl th{{background:rgba(255,255,255,0.04);font-weight:700;color:#fff;}}
+.bbl th{{background:rgba(255,255,255,0.03);font-weight:700;color:#fff;}}
 
 /* ── INPUT AREA ── */
-#inp-area{{padding:14px 6% 18px;border-top:1px solid var(--border);flex-shrink:0;background:rgba(6,6,16,.9);backdrop-filter:blur(16px);}}
+#inp-area{{padding:14px 8% 24px;flex-shrink:0;z-index:20;background:var(--bg);}}
 
-#file-prev{{display:none;align-items:center;gap:10px;background:var(--card);border:1px solid rgba(139,92,246,.2);border-radius:10px;padding:8px 14px;margin-bottom:10px;}}
+#file-prev{{display:none;align-items:center;gap:10px;background:var(--card);border:1px solid var(--border);border-radius:10px;padding:8px 14px;margin-bottom:10px;}}
 #file-prev.show{{display:flex;}}
 #fp-img{{max-height:56px;border-radius:6px;display:none;}}
 
@@ -518,36 +614,115 @@ body{{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var
 .vdot{{width:10px;height:10px;background:var(--danger);border-radius:50%;animation:pvdot 1s ease-in-out infinite;}}
 @keyframes pvdot{{0%,100%{{transform:scale(1)}}50%{{transform:scale(1.5);opacity:.5}}}}
 
-.irow{{
-  display:flex;align-items:flex-end;gap:8px;
-  background:var(--card);border:1.5px solid var(--border);
-  border-radius:16px;padding:10px 12px;
-  transition:border-color .2s,box-shadow .2s;
+/* Consolidated input container card */
+#inp-container {{
+  background: #0f1016;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 20px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  transition: border-color 0.25s, box-shadow 0.25s;
 }}
-.irow:focus-within{{border-color:var(--p);box-shadow:0 0 0 3px rgba(139,92,246,.1);}}
-#ui{{
+#inp-container:focus-within {{
+  border-color: rgba(139, 92, 246, 0.45);
+  box-shadow: 0 8px 32px rgba(139, 92, 246, 0.05);
+}}
+
+#ui {{
   flex:1;background:none;border:none;color:var(--text);
-  font-size:14px;resize:none;max-height:160px;outline:none;
-  font-family:inherit;line-height:1.6;padding:2px 0;
+  font-size:14.5px;resize:none;max-height:160px;outline:none;
+  font-family:inherit;line-height:1.5;padding:2px 0;width:100%;
+  min-height:36px;
 }}
-#ui::placeholder{{color:#374151;}}
-.tbtn{{
-  background:none;border:none;color:var(--dim);cursor:pointer;
-  padding:7px;border-radius:9px;font-size:18px;
-  transition:all .2s;flex-shrink:0;display:flex;align-items:center;justify-content:center;
+#ui::placeholder{{color:#52525b;}}
+
+.inp-actions-row {{
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }}
-.tbtn:hover{{color:var(--p);background:rgba(139,92,246,.1);}}
-.tbtn.rec{{color:var(--danger);}}
-#sbtn{{
-  background:linear-gradient(135deg,var(--p),var(--pp));
-  border:none;border-radius:11px;color:#fff;
-  width:38px;height:38px;cursor:pointer;
-  display:flex;align-items:center;justify-content:center;font-size:16px;
-  transition:all .2s;flex-shrink:0;box-shadow:0 2px 14px rgba(139,92,246,.35);
+.inp-actions-left {{
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }}
-#sbtn:hover{{transform:scale(1.08);}}
-#sbtn:disabled{{background:#1a1a35;cursor:not-allowed;transform:none;box-shadow:none;}}
-.ihint{{text-align:center;font-size:11px;color:var(--dim);margin-top:7px;}}
+.inp-actions-right {{
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}}
+
+.action-btn-icon {{
+  background: transparent;
+  border: none;
+  color: #71717a;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}}
+.action-btn-icon:hover {{
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.04);
+}}
+.action-btn-icon.rec {{
+  color: var(--danger);
+  background: rgba(244, 63, 94, 0.1);
+}}
+
+.action-btn-pill {{
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 30px;
+  color: #e4e4e7;
+  font-size: 12.5px;
+  font-weight: 500;
+  padding: 6px 14px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.2s;
+}}
+.action-btn-pill:hover {{
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+}}
+
+#sbtn {{
+  background: linear-gradient(135deg, var(--p), var(--pp));
+  border: none;
+  border-radius: 10px;
+  color: #ffffff;
+  width: 32px;
+  height: 32px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+  box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
+}}
+#sbtn:hover {{
+  transform: scale(1.05);
+  box-shadow: 0 4px 16px rgba(139, 92, 246, 0.4);
+}}
+#sbtn:disabled {{
+  background: rgba(255, 255, 255, 0.03);
+  color: #52525b;
+  cursor: not-allowed;
+  box-shadow: none;
+  transform: none;
+}}
+
+.ihint{{text-align:center;font-size:11px;color:var(--dim);margin-top:8px;}}
 #fi,#ii{{display:none;}}
 
 /* ── SUBSCRIBE MODAL ── */
@@ -558,7 +733,7 @@ body{{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var
 }}
 #moverlay.show{{display:flex;}}
 .modal{{
-  background:#09091a;border:1px solid var(--border);border-radius:22px;
+  background:#090912;border:1px solid var(--border);border-radius:22px;
   padding:34px 32px;width:580px;max-width:95vw;
   box-shadow:0 24px 80px rgba(0,0,0,.7),0 0 0 1px rgba(139,92,246,.1);
 }}
@@ -615,43 +790,68 @@ body{{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var
 <div id="sb">
   <div class="sb-top">
     <div class="nx-logo">
-      <!-- NexusAI Hexagon Logo (animated) -->
-      <svg width="38" height="38" viewBox="0 0 38 38">
+      <!-- Nexus AI Logo SVG -->
+      <svg width="28" height="28" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M16 4L4 28H10L16 16L22 28H28L16 4Z" fill="url(#axGlow)"/>
+        <path d="M16 12L11 22H21L16 12Z" fill="#0c0d14"/>
+        <circle cx="16" cy="19" r="2.5" fill="#06b6d4"/>
         <defs>
-          <linearGradient id="nlg" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stop-color="#8b5cf6"><animate attributeName="stop-color" values="#8b5cf6;#06b6d4;#8b5cf6" dur="4s" repeatCount="indefinite"/></stop>
-            <stop offset="100%" stop-color="#06b6d4"><animate attributeName="stop-color" values="#06b6d4;#8b5cf6;#06b6d4" dur="4s" repeatCount="indefinite"/></stop>
+          <linearGradient id="axGlow" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#8b5cf6"/>
+            <stop offset="100%" stop-color="#06b6d4"/>
           </linearGradient>
         </defs>
-        <polygon points="19,2 34,10.5 34,27.5 19,36 4,27.5 4,10.5" fill="url(#nlg)" opacity=".12"/>
-        <polygon points="19,2 34,10.5 34,27.5 19,36 4,27.5 4,10.5" fill="none" stroke="url(#nlg)" stroke-width="1.5"/>
-        <circle cx="19" cy="19" r="5.5" fill="url(#nlg)"><animate attributeName="r" values="5.5;6.2;5.5" dur="2.5s" repeatCount="indefinite"/></circle>
-        <circle cx="19" cy="4"    r="1.8" fill="url(#nlg)" opacity=".7"/>
-        <circle cx="32" cy="11.5" r="1.8" fill="url(#nlg)" opacity=".7"/>
-        <circle cx="32" cy="26.5" r="1.8" fill="url(#nlg)" opacity=".7"/>
-        <circle cx="19" cy="34"   r="1.8" fill="url(#nlg)" opacity=".7"/>
-        <circle cx="6"  cy="26.5" r="1.8" fill="url(#nlg)" opacity=".7"/>
-        <circle cx="6"  cy="11.5" r="1.8" fill="url(#nlg)" opacity=".7"/>
-        <line x1="19" y1="4"    x2="19" y2="13.5" stroke="url(#nlg)" stroke-width=".7" opacity=".4"/>
-        <line x1="32" y1="11.5" x2="23" y2="15"   stroke="url(#nlg)" stroke-width=".7" opacity=".4"/>
-        <line x1="32" y1="26.5" x2="23" y2="23"   stroke="url(#nlg)" stroke-width=".7" opacity=".4"/>
-        <line x1="19" y1="34"   x2="19" y2="24.5" stroke="url(#nlg)" stroke-width=".7" opacity=".4"/>
-        <line x1="6"  y1="26.5" x2="15" y2="23"   stroke="url(#nlg)" stroke-width=".7" opacity=".4"/>
-        <line x1="6"  y1="11.5" x2="15" y2="15"   stroke="url(#nlg)" stroke-width=".7" opacity=".4"/>
       </svg>
       <div>
-        <div class="nx-name">Nexus<em>AI</em></div>
-        <div class="nx-sub">AI Companion</div>
+        <div class="nx-name">Nexus AI</div>
+        <div class="nx-sub">AI Assistant</div>
       </div>
     </div>
     <button id="new-btn" onclick="newChat()">✦ &nbsp;New Conversation</button>
   </div>
 
-  <div class="sb-search">
-    <input type="text" placeholder="Search conversations…" oninput="searchConvs(this.value)"/>
+  <div class="sb-search-wrap">
+    <div class="sb-search-icon">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+    </div>
+    <input type="text" placeholder="Search chats" oninput="searchConvs(this.value)"/>
+    <div class="sb-search-kbd">⌘K</div>
   </div>
 
-  <div class="sb-lbl">History</div>
+  <!-- Sidebar navigation list -->
+  <div class="sb-nav">
+    <a href="#" class="sb-nav-item active">
+      <span class="sb-nav-icon">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+      </span>
+      <span>Home</span>
+    </a>
+    <a href="#" class="sb-nav-item" onclick="openModal(); return false;">
+      <span class="sb-nav-icon">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg>
+      </span>
+      <span>Templates</span>
+    </a>
+    <a href="#" class="sb-nav-item" onclick="alert('Nexus AI Explore feature coming soon!'); return false;">
+      <span class="sb-nav-icon">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/></svg>
+      </span>
+      <span>Explore</span>
+    </a>
+    <a href="#" class="sb-nav-item" onclick="document.getElementById('convs').focus(); return false;">
+      <span class="sb-nav-icon">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 8v4l3 3"/><circle cx="12" cy="12" r="10"/></svg>
+      </span>
+      <span>History</span>
+    </a>
+    <a href="#" class="sb-nav-item" onclick="openModal(); return false;">
+      <span class="sb-nav-icon">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+      </span>
+      <span>Wallet</span>
+    </a>
+  </div>
+
   <div id="convs"></div>
 
   <div class="usg">
@@ -676,44 +876,39 @@ body{{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var
 <!-- ═══ MAIN ══════════════════════════════════════════════════════════════ -->
 <div id="main">
   <div id="hdr">
-    <div class="hdr-icon">
-      <svg width="22" height="22" viewBox="0 0 22 22">
-        <polygon points="11,1 20,6 20,16 11,21 2,16 2,6" fill="none" stroke="#8b5cf6" stroke-width="1.2"/>
-        <circle cx="11" cy="11" r="3.5" fill="#8b5cf6" opacity=".9"/>
-      </svg>
-    </div>
-    <div>
-      <div class="hdr-title">Nexus</div>
-      <div class="hdr-sub">{backend_status} · Always Private</div>
+    <div class="assistant-dropdown">
+      <button class="assistant-dropdown-btn">
+        <span>AI Assistant</span>
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+      </button>
     </div>
     <div class="online-pill"><div class="odot"></div>Online</div>
   </div>
 
   <div id="msgs">
     <div id="welcome">
-      <div class="wlc-logo">
-        <svg width="44" height="44" viewBox="0 0 44 44">
-          <defs><linearGradient id="wg" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#8b5cf6"/><stop offset="100%" stop-color="#06b6d4"/></linearGradient></defs>
-          <polygon points="22,2 40,12 40,32 22,42 4,32 4,12" fill="none" stroke="url(#wg)" stroke-width="1.5"/>
-          <circle cx="22" cy="22" r="8" fill="url(#wg)" opacity=".2"/>
-          <circle cx="22" cy="22" r="5" fill="url(#wg)"/>
-          <line x1="22" y1="2"  x2="22" y2="17" stroke="url(#wg)" stroke-width="1" opacity=".4"/>
-          <line x1="40" y1="12" x2="27" y2="17" stroke="url(#wg)" stroke-width="1" opacity=".4"/>
-          <line x1="40" y1="32" x2="27" y2="27" stroke="url(#wg)" stroke-width="1" opacity=".4"/>
-          <line x1="22" y1="42" x2="22" y2="27" stroke="url(#wg)" stroke-width="1" opacity=".4"/>
-          <line x1="4"  y1="32" x2="17" y2="27" stroke="url(#wg)" stroke-width="1" opacity=".4"/>
-          <line x1="4"  y1="12" x2="17" y2="17" stroke="url(#wg)" stroke-width="1" opacity=".4"/>
-        </svg>
+      <div class="orb-container">
+        <div class="glowing-orb">
+          <div class="orb-shine"></div>
+        </div>
       </div>
-      <h2>Hello, <span>{user["username"]}</span> ✦</h2>
-      <p>I'm Nexus — your intelligent AI companion. Ask me anything, upload files, or use voice.</p>
-      <div class="chips">
-        <div class="chip" onclick="useChip(this)">💻 Write Python code for me</div>
-        <div class="chip" onclick="useChip(this)">🧠 Explain neural networks simply</div>
-        <div class="chip" onclick="useChip(this)">🚀 Suggest portfolio project ideas</div>
-        <div class="chip" onclick="useChip(this)">✦ What can you do?</div>
-        <div class="chip" onclick="useChip(this)">🔍 Review and debug my code</div>
-        <div class="chip" onclick="useChip(this)">📄 Summarize this document</div>
+      <h2 id="welcome-title">Good Evening, <span class="user-span">{user["username"]}</span>.</h2>
+      <p id="welcome-subtitle">Can I help you with anything ?</p>
+      
+      <!-- Suggestion Grid -->
+      <div class="suggest-grid">
+        <div class="suggest-card" onclick="useSuggest('Smart Budget')">
+          <div class="suggest-card-title">Smart Budget</div>
+          <div class="suggest-card-desc">A budget that fits your lifestyle, not the other way around</div>
+        </div>
+        <div class="suggest-card" onclick="useSuggest('Analytics')">
+          <div class="suggest-card-title">Analytics</div>
+          <div class="suggest-card-desc">Analytics empowers individuals and businesses to make smarter</div>
+        </div>
+        <div class="suggest-card" onclick="useSuggest('Spending')">
+          <div class="suggest-card-title">Spending</div>
+          <div class="suggest-card-desc">Spending is the way individuals and businesses use their financial</div>
+        </div>
       </div>
     </div>
   </div>
@@ -729,21 +924,58 @@ body{{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var
       <div class="vdot"></div>
       Recording… click the mic again to stop and send
     </div>
-    <div class="irow">
-      <textarea id="ui" rows="1" placeholder="Message Nexus…" onkeydown="hkey(event)" oninput="ars(this)"></textarea>
-      <button class="tbtn" onclick="document.getElementById('fi').click()" title="Attach file">📎</button>
-      <button class="tbtn" onclick="document.getElementById('ii').click()" title="Attach image">🖼</button>
-      <button class="tbtn" id="vbtn" onclick="toggleVoice()" title="Voice input">🎙</button>
-      <button id="sbtn" onclick="send()" title="Send">➤</button>
+    
+    <!-- Consolidated input card -->
+    <div id="inp-container">
+      <textarea id="ui" rows="1" placeholder="Message Nexus AI…" onkeydown="hkey(event)" oninput="ars(this)"></textarea>
+      
+      <div class="inp-actions-row">
+        <div class="inp-actions-left">
+          <!-- Attach File -->
+          <button class="action-btn-icon" onclick="document.getElementById('fi').click()" title="Attach File">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
+          </button>
+          
+          <!-- Attach Image -->
+          <button class="action-btn-icon" onclick="document.getElementById('ii').click()" title="Attach Image">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+          </button>
+
+          <!-- Create Image Pill -->
+          <button class="action-btn-pill" onclick="triggerPill('image')" title="Create an image">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707m0-12.728l.707.707m11.32 11.32l.707.707M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8z"/></svg>
+            <span>Create an image</span>
+          </button>
+
+          <!-- Search Web Pill -->
+          <button class="action-btn-pill" onclick="triggerPill('search')" title="Search the web">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20M2 12h20"/></svg>
+            <span>Search the web</span>
+          </button>
+        </div>
+
+        <div class="inp-actions-right">
+          <!-- Voice Record -->
+          <button class="action-btn-icon" id="vbtn" onclick="toggleVoice()" title="Voice Input">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2M12 19v4M8 23h8"/></svg>
+          </button>
+          
+          <!-- Send Button -->
+          <button id="sbtn" onclick="send()" title="Send">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+          </button>
+        </div>
+      </div>
     </div>
-    <div class="ihint">Enter to send · Shift+Enter new line · 📎 files · 🖼 images · 🎙 voice</div>
+
+    <div class="ihint">Enter to send · Shift+Enter new line · Drag &amp; drop to upload files</div>
   </div>
 </div>
 
 <!-- ═══ SUBSCRIBE MODAL ════════════════════════════════════════════════════ -->
 <div id="moverlay" onclick="if(event.target===this)closeModal()">
   <div class="modal">
-    <h2>⚡ <span>Upgrade NexusAI</span></h2>
+    <h2>⚡ <span>Upgrade Nexus AI</span></h2>
     <p>Unlock more power — more messages, priority speed, and advanced features</p>
     <div class="plans">
       <div class="pc" onclick="subscribe('free')">
@@ -788,36 +1020,27 @@ const NX = {user_js};
   const cv=document.getElementById('bg'),ctx=cv.getContext('2d');
   let W=cv.width=innerWidth,H=cv.height=innerHeight;
   const COLS=['rgba(139,92,246,','rgba(6,182,212,','rgba(168,85,247,','rgba(91,33,182,'];
-  const pts=Array.from({{length:85}},()=>{{
+  const pts=Array.from({{length:60}},()=>{{
     const c=COLS[Math.floor(Math.random()*COLS.length)];
-    return {{x:Math.random()*W,y:Math.random()*H,vx:(Math.random()-.5)*.45,vy:(Math.random()-.5)*.45,r:1+Math.random()*2,c,ph:Math.random()*Math.PI*2}};
+    return {{x:Math.random()*W,y:Math.random()*H,vx:(Math.random()-.5)*.3,vy:(Math.random()-.5)*.3,r:1+Math.random()*2,c,ph:Math.random()*Math.PI*2}};
   }});
   let t=0;
   function draw(){{
-    t+=.005; ctx.clearRect(0,0,W,H);
+    t+=.004; ctx.clearRect(0,0,W,H);
     pts.forEach((p,i)=>{{
       p.x+=p.vx; p.y+=p.vy;
       if(p.x<0||p.x>W) p.vx*=-1;
       if(p.y<0||p.y>H) p.vy*=-1;
-      const op=.25+.18*Math.sin(t+p.ph);
+      const op=.2+.12*Math.sin(t+p.ph);
       /* glow */
-      const gr=ctx.createRadialGradient(p.x,p.y,0,p.x,p.y,p.r*3);
-      gr.addColorStop(0,p.c+(op+.1)+')');
+      const gr=ctx.createRadialGradient(p.x,p.y,0,p.x,p.y,p.r*3.5);
+      gr.addColorStop(0,p.c+(op+.15)+')');
       gr.addColorStop(1,p.c+'0)');
-      ctx.beginPath(); ctx.arc(p.x,p.y,p.r*3,0,Math.PI*2);
+      ctx.beginPath(); ctx.arc(p.x,p.y,p.r*3.5,0,Math.PI*2);
       ctx.fillStyle=gr; ctx.fill();
       /* dot */
       ctx.beginPath(); ctx.arc(p.x,p.y,p.r,0,Math.PI*2);
       ctx.fillStyle=p.c+op+')'; ctx.fill();
-      /* connections */
-      for(let j=i+1;j<pts.length;j++){{
-        const q=pts[j],d=Math.hypot(p.x-q.x,p.y-q.y);
-        if(d<130){{
-          ctx.beginPath(); ctx.moveTo(p.x,p.y); ctx.lineTo(q.x,q.y);
-          ctx.strokeStyle=`rgba(139,92,246,${{.06*(1-d/130)}})`;
-          ctx.lineWidth=.6; ctx.stroke();
-        }}
-      }}
     }});
     requestAnimationFrame(draw);
   }}
@@ -834,8 +1057,38 @@ const esc=t=>String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'
 
 function ars(el){{el.style.height='auto';el.style.height=Math.min(el.scrollHeight,160)+'px';}}
 function hkey(e){{if(e.key==='Enter'&&!e.shiftKey){{e.preventDefault();send();}}}}
-function useChip(el){{$('ui').value=el.textContent.slice(2).trim();send();}}
+function useSuggest(type){{
+  let text = '';
+  if (type === 'Smart Budget') text = "Can you help me design a smart budget fits for my lifestyle?";
+  else if (type === 'Analytics') text = "How can business analytics help me make better financial decisions?";
+  else if (type === 'Spending') text = "Provide strategies for managing and tracking personal spending.";
+  $('ui').value=text;
+  $('ui').focus();
+  ars($('ui'));
+}}
+function triggerPill(type) {{
+  const inp = $('ui');
+  if (type === 'image') {{
+    inp.value = "Create an image of: " + inp.value;
+  }} else if (type === 'search') {{
+    inp.value = "Search the web for: " + inp.value;
+  }}
+  inp.focus();
+  ars(inp);
+}}
 function tstamp(){{return new Date().toLocaleTimeString([],{{hour:'2-digit',minute:'2-digit'}});}}
+
+/* ── Dynamic Greeting ── */
+function updateGreeting() {{
+  const hr = new Date().getHours();
+  let greet = "Good Evening";
+  if (hr < 12) greet = "Good Morning";
+  else if (hr < 17) greet = "Good Afternoon";
+  const titleEl = $('welcome-title');
+  if (titleEl) {{
+    titleEl.innerHTML = `${{greet}}, <span class="user-span">${{NX.username}}</span>.`;
+  }}
+}}
 
 /* ── Refresh usage ── */
 async function refreshUsage(){{
@@ -876,42 +1129,87 @@ async function logout(){{await fetch('/api/auth/logout',{{method:'POST'}});locat
 function newChat(){{
   sid=null; pendFile=null; clearFile();
   $('msgs').innerHTML=buildWelcome();
+  updateGreeting();
   document.querySelectorAll('.cv').forEach(e=>e.classList.remove('act'));
   $('ui').focus();
 }}
 
 function buildWelcome(){{
   return `<div id="welcome">
-    <div class="wlc-logo">
-      <svg width="44" height="44" viewBox="0 0 44 44">
-        <defs><linearGradient id="wg2" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#8b5cf6"/><stop offset="100%" stop-color="#06b6d4"/></linearGradient></defs>
-        <polygon points="22,2 40,12 40,32 22,42 4,32 4,12" fill="none" stroke="url(#wg2)" stroke-width="1.5"/>
-        <circle cx="22" cy="22" r="5" fill="url(#wg2)"/>
-      </svg>
+    <div class="orb-container">
+      <div class="glowing-orb">
+        <div class="orb-shine"></div>
+      </div>
     </div>
-    <h2>Hello, <span style="background:linear-gradient(135deg,#8b5cf6,#06b6d4);-webkit-background-clip:text;-webkit-text-fill-color:transparent">${{NX.username}}</span> ✦</h2>
-    <p>I'm Nexus — your intelligent AI companion.</p>
-    <div class="chips">
-      <div class="chip" onclick="useChip(this)">💻 Write Python code for me</div>
-      <div class="chip" onclick="useChip(this)">🧠 Explain neural networks simply</div>
-      <div class="chip" onclick="useChip(this)">🚀 Suggest portfolio project ideas</div>
-      <div class="chip" onclick="useChip(this)">✦ What can you do?</div>
+    <h2 id="welcome-title">Good Evening, <span class="user-span">${{NX.username}}</span>.</h2>
+    <p id="welcome-subtitle">Can I help you with anything ?</p>
+    <div class="suggest-grid">
+      <div class="suggest-card" onclick="useSuggest('Smart Budget')">
+        <div class="suggest-card-title">Smart Budget</div>
+        <div class="suggest-card-desc">A budget that fits your lifestyle, not the other way around</div>
+      </div>
+      <div class="suggest-card" onclick="useSuggest('Analytics')">
+        <div class="suggest-card-title">Analytics</div>
+        <div class="suggest-card-desc">Analytics empowers individuals and businesses to make smarter</div>
+      </div>
+      <div class="suggest-card" onclick="useSuggest('Spending')">
+        <div class="suggest-card-title">Spending</div>
+        <div class="suggest-card-desc">Spending is the way individuals and businesses use their financial</div>
+      </div>
     </div>
   </div>`;
 }}
 
-/* ── Load conversations ── */
+/* ── Load conversations grouped ── */
 async function loadConvs(search=''){{
   const url=search?`/api/convs?search=${{encodeURIComponent(search)}}`:`/api/convs`;
   const data=await fetch(url).then(r=>r.json());
   const el=$('convs');
   if(!data.length){{el.innerHTML='<div style="padding:14px 16px;color:var(--dim);font-size:13px;text-align:center;">No conversations yet</div>';return;}}
-  el.innerHTML=data.map(c=>`
-    <div class="cv ${{c.sid===sid?'act':''}}" onclick="loadChat('${{c.sid}}')">
-      <span class="cv-ico">◈</span>
-      <span class="cv-ttl">${{esc(c.title)}}</span>
-      <button class="cv-del" onclick="delChat(event,'${{c.sid}}')" title="Delete">⊗</button>
-    </div>`).join('');
+  
+  const recent = [];
+  const older = [];
+  data.forEach(c => {{
+    const created = new Date(c.created_at);
+    const diffTime = Math.abs(new Date() - created);
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    if (diffDays <= 2) {{
+      recent.push(c);
+    }} else {{
+      older.push(c);
+    }}
+  }});
+
+  let html = '';
+  if (recent.length > 0) {{
+    html += `<div class="sb-lbl">Recent</div>`;
+    html += recent.map(c => `
+      <div class="cv ${{c.sid===sid?'act':''}}" onclick="loadChat('${{c.sid}}')">
+        <span class="cv-ico">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        </span>
+        <span class="cv-ttl">${{esc(c.title)}}</span>
+        <button class="cv-del" onclick="delChat(event,'${{c.sid}}')" title="Delete">⊗</button>
+      </div>
+    `).join('');
+  }}
+  if (older.length > 0) {{
+    html += `<div class="sb-lbl">Older</div>`;
+    html += older.map(c => `
+      <div class="cv ${{c.sid===sid?'act':''}}" onclick="loadChat('${{c.sid}}')">
+        <span class="cv-ico">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        </span>
+        <span class="cv-ttl">${{esc(c.title)}}</span>
+        <button class="cv-del" onclick="delChat(event,'${{c.sid}}')" title="Delete">⊗</button>
+      </div>
+    `).join('');
+  }}
+  
+  if (recent.length === 0 && older.length === 0) {{
+    html = '<div style="padding:14px 16px;color:var(--dim);font-size:13px;text-align:center;">No conversations yet</div>';
+  }}
+  el.innerHTML = html;
 }}
 
 function searchConvs(v){{loadConvs(v);}}
@@ -986,12 +1284,12 @@ function fmt(text, streaming=false){{
     html = esc(text);
   }}
   if(streaming) {{
-    if(html.endsWith('</p>\\n')) {{
-      html = html.slice(0, -5) + '<span class="cursor"></span></p>\\n';
+    if(html.endsWith('</p>\n')) {{
+      html = html.slice(0, -5) + '<span class="cursor"></span></p>\n';
     }} else if(html.endsWith('</p>')) {{
       html = html.slice(0, -4) + '<span class="cursor"></span></p>';
-    }} else if(html.endsWith('</li>\\n')) {{
-      html = html.slice(0, -6) + '<span class="cursor"></span></li>\\n';
+    }} else if(html.endsWith('</li>\n')) {{
+      html = html.slice(0, -6) + '<span class="cursor"></span></li>\n';
     }} else {{
       html += '<span class="cursor"></span>';
     }}
@@ -1013,7 +1311,7 @@ function addBubble(role,content,streaming=false,fileName=null,fileType=null,ts=n
   const row=document.createElement('div');
   row.className='mrow '+role;
   if(streaming) row.id='srow';
-  const init=role==='user'?(NX.username||'U')[0].toUpperCase():'✦';
+  const init=role==='user'?(NX.username||'U')[0].toUpperCase():'A';
   let fHtml='';
   if(fileName){{
     if(fileType==='image') fHtml=`<img class="chat-img" src="/uploads/${{esc(fileName)}}" alt="img" onerror="this.style.display='none'"/>`;
@@ -1056,8 +1354,8 @@ async function send(){{
     }});
     if(!res.ok){{
       const d=await res.json().catch(()=>({{}}));
-      const errText=d.error||`Server error: ${res.status}`;
-      sc.innerHTML=`<span style="color:var(--danger)">⚠️ ${esc(errText)}</span>`;
+      const errText=d.error||`Server error: ${{res.status}}`;
+      sc.innerHTML=`<span style="color:var(--danger)">⚠️ ${{esc(errText)}}</span>`;
       const sr=$('srow'); if(sr) sr.id=''; sc.id='';
       busy=false; $('sbtn').disabled=false; return;
     }}
@@ -1065,14 +1363,14 @@ async function send(){{
     while(true){{
       const {{value,done}}=await reader.read(); if(done) break;
       const chunk=dec.decode(value);
-      for(const line of chunk.split('\\n')){{
+      for(const line of chunk.split('\n')){{
         if(!line.startsWith('data: ')) continue;
         try{{
           const d=JSON.parse(line.slice(6));
           if(d.token){{full+=d.token;sc.innerHTML=fmt(full,true);cont.scrollTop=cont.scrollHeight;}}
           if(d.sid&&!sid) sid=d.sid;
           if(d.done){{sc.innerHTML=fmt(full,false);const sr=$('srow');if(sr)sr.id='';sc.id='';loadConvs();refreshUsage();}}
-          if(d.error){{sc.innerHTML=`<span style="color:var(--danger)">⚠️ ${{esc(d.error)}}<br><small>Make sure <b>ollama serve</b> is running in a terminal.</small></span>`;}}
+          if(d.error){{sc.innerHTML=`<span style="color:var(--danger)">⚠️ ${{esc(d.error)}}</span>`;}}
         }}catch(_){{}}
       }}
     }}
@@ -1085,15 +1383,16 @@ async function send(){{
       const sr=$('srow'); if(sr) sr.id=''; sc.id='';
     }}
   }}catch(err){{
-    sc.innerHTML=`<span style="color:var(--danger)">⚠️ Could not reach the server.<br><small>Check <b>python main.py</b> is running.</small></span>`;
+    sc.innerHTML=`<span style="color:var(--danger)">⚠️ Could not reach the server.<br><small>Check if the python server is running.</small></span>`;
   }}
   busy=false; $('sbtn').disabled=false; inp.focus();
 }}
 
 /* ── Boot ── */
-loadConvs(); refreshUsage(); $('ui').focus();
+loadConvs(); refreshUsage(); updateGreeting(); $('ui').focus();
 </script>
 </body></html>"""
+
 
 
 # ╔══════════════════════════════════════════════════════════════════════════════
@@ -1105,9 +1404,9 @@ async def home(request: Request):
     u = cur_user(request)
     if not u:
         return RedirectResponse("/login")
-    if GEMINI_API_KEY:
+    if GEMINI_API_KEY and GEMINI_API_KEY.strip():
         status = "Gemini AI ⚡ Ultra Fast"
-    elif GROQ_API_KEY:
+    elif GROQ_API_KEY and GROQ_API_KEY.strip():
         status = "Groq Cloud ⚡ Ultra Fast"
     else:
         status = "Local Ollama ◈ Normal Speed"
@@ -1251,7 +1550,7 @@ async def chat_api(request: Request):
     database.bump_usage(u["id"])
 
     history  = database.get_msgs(sid)
-    is_gemini = GEMINI_API_KEY is not None
+    is_gemini = bool(GEMINI_API_KEY and GEMINI_API_KEY.strip())
 
     if is_gemini:
         # Build contents array in Gemini format, merging consecutive user/model messages
@@ -1303,7 +1602,7 @@ async def chat_api(request: Request):
         }
     else:
         messages = [{"role":"system","content":SYSTEM_PROMPT}]
-        is_groq_vision = GROQ_API_KEY and ftype_db == "image" and fi
+        is_groq_vision = bool(GROQ_API_KEY and GROQ_API_KEY.strip()) and ftype_db == "image" and fi
 
         for i,m in enumerate(history):
             if i == len(history)-1 and m["role"] == "user":
@@ -1339,7 +1638,7 @@ async def chat_api(request: Request):
             messages.append({"role":m["role"],"content":content})
 
     model = GROQ_MODEL
-    if GROQ_API_KEY and ftype_db == "image":
+    if GROQ_API_KEY and GROQ_API_KEY.strip() and ftype_db == "image":
         model = "llama-3.2-11b-vision-preview"
 
     async def stream():
@@ -1370,9 +1669,9 @@ async def chat_api(request: Request):
                                         full += tok
                                         yield f"data: {json.dumps({'token': tok, 'sid': sid})}\n\n"
                                 except json.JSONDecodeError: continue
-                elif GROQ_API_KEY:
+                elif GROQ_API_KEY and GROQ_API_KEY.strip():
                     headers = {
-                        "Authorization": f"Bearer {GROQ_API_KEY}",
+                        "Authorization": f"Bearer {GROQ_API_KEY.strip()}",
                         "Content-Type": "application/json"
                     }
                     async with client.stream("POST", "https://api.groq.com/openai/v1/chat/completions",
